@@ -52,6 +52,9 @@ bool SystemVpnWrapper::PrepareUpdate(SysVpnStageCode stage, const std::string &m
         case SysVpnStageCode::VPN_STAGE_SET_VPN_REMOTE_ADDRESS:
             MultiVpnManager::GetInstance().SetVpnRemoteAddress(message);
             break;
+        case SysVpnStageCode::VPN_STAGE_L2TP_STOP:
+            MultiVpnManager::GetInstance().ClearPppFd(message);
+            break;
         default:
             return false;
     }
