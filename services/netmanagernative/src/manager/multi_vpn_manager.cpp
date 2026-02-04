@@ -334,7 +334,24 @@ void MultiVpnManager::CreatePppFd(const std::string &ifName)
 
 void MultiVpnManager::ClearPppFd(const std::string &connectName)
 {
-    
+    if (strstr(connectName.c_str(), L2TP_NAME) == NULL ||
+        connectName.substr(0, strlen(L2TP_NAME)) != L2TP_NAME) {
+        NETNATIVE_LOGE("ClearPppFd failed, not valid l2tp connection");
+        return;
+    }
+    std::string ifNameId = connectName.substr(strlen(L2TP_NAME));
+    if (ifNameId.empty()) {
+        NETNATIVE_LOGE("ClearPppFd failed, no ifNameId");
+        return;
+    }
+    for (char c : ifNameId) {
+        if (!std::isdigit(static_cast<unsigned char>(c))) {
+            NETNATIVE_LOGE("ClearPppFd failed, invalid ifNameId");
+            return;
+        }
+    }
+    std::string ifName = PPP_CARD_NAME + ifNameId;
+    DestroyMultiVpnFd(ifName);
 }
 
 int32_t MultiVpnManager::CreateMultiTunInterface(const std::string &ifName)
