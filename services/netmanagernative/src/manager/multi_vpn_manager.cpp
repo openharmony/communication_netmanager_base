@@ -332,6 +332,11 @@ void MultiVpnManager::CreatePppFd(const std::string &ifName)
     StartMultiVpnInterfaceFdListen();
 }
 
+void MultiVpnManager::ClearPppFd(const std::string &connectName)
+{
+    
+}
+
 int32_t MultiVpnManager::CreateMultiTunInterface(const std::string &ifName)
 {
     int32_t multiVpnFd = 0;
