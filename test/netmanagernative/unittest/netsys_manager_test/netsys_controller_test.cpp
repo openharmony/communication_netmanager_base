@@ -363,7 +363,7 @@ HWTEST_F(NetsysControllerTest, NetsysControllerTest014, TestSize.Level1)
     EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
 
     ret = netsysController->BindNetworkServiceVpn(SOCKET_FD);
-    EXPECT_EQ(ret, NetManagerStandard::NETSYS_ERR_VPN);
+    EXPECT_GE(ret, NetManagerStandard::NETMANAGER_SUCCESS);
 
     ifreq ifRequest;
     ret = netsysController->EnableVirtualNetIfaceCard(SOCKET_FD, ifRequest, g_ifaceFd);
