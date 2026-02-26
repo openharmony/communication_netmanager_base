@@ -358,5 +358,22 @@ HWTEST_F(MultiVpnManagerTest, CreateMultiTunInterface001, TestSize.Level1)
     EXPECT_EQ(result, NETMANAGER_SUCCESS);
 }
 
+HWTEST_F(MultiVpnManagerTest, ClearPppFd001, TestSize.Level1)
+{
+    std::string connectName = "";
+    MultiVpnManager::GetInstance().ClearPppFd(connectName);
+    connectName = "test";
+    MultiVpnManager::GetInstance().ClearPppFd(connectName);
+    connectName = "l2tp";
+    MultiVpnManager::GetInstance().ClearPppFd(connectName);
+    connectName = "l2tptest";
+    MultiVpnManager::GetInstance().ClearPppFd(connectName);
+    connectName = "l2tp1";
+    MultiVpnManager::GetInstance().ClearPppFd(connectName);
+    int32_t multiVpnFd = 0;
+    auto result = MultiVpnManager::GetInstance().GetMultiVpnFd(connectName, multiVpnFd);
+    EXPECT_EQ(result, NETMANAGER_ERROR);
+}
+
 } // namespace NetManagerStandard
 } // namespace OHOS
