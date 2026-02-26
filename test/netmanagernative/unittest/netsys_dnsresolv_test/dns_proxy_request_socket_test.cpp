@@ -170,6 +170,19 @@ HWTEST_F(DnsProxyRequestSocketTest, SendRequest2Server001, TestSize.Level0)
     EXPECT_EQ(socketFd, 300);
 }
 
+HWTEST_F(DnsProxyRequestSocketTest, SendRequest2Server002, TestSize.Level0)
+{
+    DnsProxyListen dnsproxylisten;
+    int32_t socketFd = 300;
+    std::unique_ptr<AlignedSockAddr> clientSock = std::make_unique<AlignedSockAddr>();
+    std::unique_ptr<RecvBuff> recvBuff = std::make_unique<RecvBuff>();
+    clientSock->sin.sin_addr.s_addr = inet_addr("127.0.0.1");
+    dnsproxylisten.serverIdxOfSocket.emplace(std::piecewise_construct, std::forward_as_tuple(socketFd),
+                              std::forward_as_tuple(socketFd, std::move(clientSock), std::move(recvBuff)));;
+    dnsproxylisten.SendRequest2Server(socketFd);
+    EXPECT_EQ(socketFd, 300);
+}
+
 HWTEST_F(DnsProxyRequestSocketTest, SendDnsBack2Client001, TestSize.Level0)
 {
     DnsProxyListen dnsproxylisten;
