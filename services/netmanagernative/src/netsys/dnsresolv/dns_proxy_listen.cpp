@@ -42,6 +42,7 @@ constexpr size_t FLAG_BUFF_OFFSET = 2;
 constexpr size_t DNS_HEAD_LENGTH = 12;
 constexpr int32_t EPOLL_TASK_NUMBER = 10;
 constexpr int32_t EPOLL_LOOP_EXIT = 1;
+constexpr uint32_t EPOLL_LOOP_ADDR = 16777343;
 DnsProxyListen::DnsProxyListen() : proxySockFd_(-1), proxySockFd6_(-1) {}
 DnsProxyListen::~DnsProxyListen()
 {
@@ -152,6 +153,10 @@ void DnsProxyListen::SendRequest2Server(int32_t socketFd)
     socklen_t addrLen;
     AlignedSockAddr &addrParse = iter->second.GetAddr();
     AlignedSockAddr &clientSock = iter->second.GetClientSock();
+    if (clientSock.sin.sin_addr.s_addr == EPOLL_LOOP_ADDR) {
+        serverIdxOfSocket.erase(iter);
+        return;
+    }
     // LCOV_EXCL_START
     if (!MakeAddrInfo(servers, serverIdx, addrParse, clientSock)) {
         return SendRequest2Server(socketFd);
