@@ -29,6 +29,7 @@ constexpr const char *MULTI_TUN_CARD_NAME = "multitun-vpn";
 constexpr const char *INNER_CHL_NAME = "inner-chl";
 constexpr const char *PPP_DEVICE_PATH = "/dev/ppp";
 constexpr const char *TUN_DEVICE_PATH = "/dev/tun";
+constexpr const char *L2TP_NAME = "l2tp";
 
 class MultiVpnManager : public std::enable_shared_from_this<MultiVpnManager> {
 private:
@@ -53,6 +54,7 @@ public:
     void CreatePppFd(const std::string &ifName);
     void SetXfrmPhyIfName(const std::string &phyName);
     void SetVpnRemoteAddress(const std::string &remoteIp);
+    void ClearPppFd(const std::string &connectName);
 
 private:
     int32_t SendVpnInterfaceFdToClient(int32_t clientFd, int32_t tunFd);
