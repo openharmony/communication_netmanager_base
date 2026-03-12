@@ -578,20 +578,10 @@ export default namespace connection {
         destroyRegister.unregister(unregisterToken);
     }
 
-    on(type: string, callback: Callback<Any>): void {
-      if (type == 'netAvailable') {
-        this.onNetAvailable(callback as Callback<NetHandle>);
-      } else if (type == 'netCapabilitiesChange') {
-        this.onNetCapabilitiesChange(callback as Callback<NetCapabilityInfo>);
-      } else if (type == 'netConnectionPropertiesChange') {
-        this.onNetConnectionPropertiesChange(callback as Callback<NetConnectionPropertyInfo>);
-      }
-    }
-
-    native onNetAvailable(callback: Callback<NetHandle>):void;
+    native onNetAvailableInner(callback: Callback<NetHandle>):void;
     native onNetBlockStatusChangeInner(callback: Callback<NetBlockStatusInfo>):void;
-    native onNetCapabilitiesChange(callback: Callback<NetCapabilityInfo>):void;
-    native onNetConnectionPropertiesChange(callback: Callback<NetConnectionPropertyInfo>):void;
+    native onNetCapabilitiesChangeInner(callback: Callback<NetCapabilityInfo>):void;
+    native onNetConnectionPropertiesChangeInner(callback: Callback<NetConnectionPropertyInfo>):void;
     native onNetLostInner(callback: Callback<NetHandle>):void;
     native onNetUnavailableInner(callback: Callback<void>):void;
 
@@ -605,6 +595,18 @@ export default namespace connection {
 
     onNetBlockStatusChange(callback: Callback<NetBlockStatusInfo>): void {
       this.onNetBlockStatusChangeInner(callback)
+    }
+
+    onNetAvailable(callback: Callback<NetHandle>): void {
+      this.onNetAvailableInner(callback)
+    }
+
+    onNetCapabilitiesChange(callback: Callback<NetCapabilityInfo>): void {
+      this.onNetCapabilitiesChangeInner(callback)
+    }
+
+    onNetConnectionPropertiesChange(callback: Callback<NetConnectionPropertyInfo>): void {
+      this.onNetConnectionPropertiesChangeInner(callback)
     }
 
     native registerSync():void;
