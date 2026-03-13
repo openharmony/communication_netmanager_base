@@ -855,6 +855,42 @@ int32_t NetPolicyServiceProxy::GetNetworkAccessPolicy(AccessPolicyParameter para
     return retCode;
 }
 
+int32_t NetPolicyServiceProxy::GetSelfNetworkAccessPolicy(NetAccessPolicy &policy)
+{
+    // LCOV_EXCL_START
+    MessageParcel data;
+    if (!WriteInterfaceToken(data)) {
+        NETMGR_LOG_E("WriteInterfaceToken failed");
+        return NETMANAGER_ERR_WRITE_DESCRIPTOR_TOKEN_FAIL;
+    }
+
+    sptr<IRemoteObject> remote = Remote();
+    if (remote == nullptr) {
+        NETMGR_LOG_E("Remote is null");
+        return NETMANAGER_ERR_LOCAL_PTR_NULL;
+    }
+
+    MessageParcel reply;
+    MessageOption option;
+    int32_t retCode = SendRequest(remote,
+        static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_GET_SELF_NETWORK_ACCESS_POLICY), data, reply, option);
+    if (retCode != NETMANAGER_SUCCESS) {
+        NETMGR_LOG_E("proxy SendRequest failed, error code: [%{public}d]", retCode);
+        return retCode;
+    }
+
+    if (!reply.ReadBool(policy.allowWiFi)) {
+        NETMGR_LOG_E("Read bool wifiAllow failed");
+        return NETMANAGER_ERR_READ_REPLY_FAIL;
+    }
+    if (!reply.ReadBool(policy.allowCellular)) {
+        NETMGR_LOG_E("Read bool cellularAllow failed");
+        return NETMANAGER_ERR_READ_REPLY_FAIL;
+    }
+    // LCOV_EXCL_STOP
+    return retCode;
+}
+
 int32_t NetPolicyServiceProxy::NotifyNetAccessPolicyDiag(uint32_t uid)
 {
     MessageParcel data;

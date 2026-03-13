@@ -261,6 +261,14 @@ public:
      */
     int32_t RemoveNetworkAccessPolicy(const std::vector<std::string> &bundleNames) override;
 
+    /**
+     * Query the network access policy of the calling application.
+     *
+     * @param policy The network access policy of application, {@link NetAccessPolicy}.
+     * @return Returns 0 success. Otherwise fail, {@link NetPolicyResultCode}.
+     */
+    int32_t GetSelfNetworkAccessPolicy(NetAccessPolicy& policy) override;
+
     NetAccessPolicyRDB GetNetAccessPolicyDBHandler()
     {
         static NetAccessPolicyRDB netAccessPolicy;

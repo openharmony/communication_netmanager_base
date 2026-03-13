@@ -51,6 +51,7 @@ std::map<uint32_t, const char *> g_codeNPS = {
     {static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_CHECK_PERMISSION), Permission::MANAGE_NET_STRATEGY},
     {static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_SET_NETWORK_ACCESS_POLICY), Permission::MANAGE_NET_STRATEGY},
     {static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_GET_NETWORK_ACCESS_POLICY), Permission::MANAGE_NET_STRATEGY},
+    {static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_GET_SELF_NETWORK_ACCESS_POLICY), ""},
     {static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_NOTIFY_NETWORK_ACCESS_POLICY_DIAG),
      Permission::MANAGE_NET_STRATEGY},
     {static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_SET_NIC_TRAFFIC_ALLOWED), Permission::MANAGE_NET_STRATEGY},
@@ -128,6 +129,8 @@ void NetPolicyServiceStub::ExtraNetPolicyServiceStub()
         &NetPolicyServiceStub::OnSetNetworkAccessPolicy;
     memberFuncMap_[static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_GET_NETWORK_ACCESS_POLICY)] =
         &NetPolicyServiceStub::OnGetNetworkAccessPolicy;
+    memberFuncMap_[static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_GET_SELF_NETWORK_ACCESS_POLICY)] =
+        &NetPolicyServiceStub::OnGetSelfNetworkAccessPolicy;
     memberFuncMap_[static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_NOTIFY_NETWORK_ACCESS_POLICY_DIAG)] =
         &NetPolicyServiceStub::OnNotifyNetAccessPolicyDiag;
     memberFuncMap_[static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_SET_NIC_TRAFFIC_ALLOWED)] =
@@ -190,14 +193,7 @@ int32_t NetPolicyServiceStub::OnRemoteRequest(uint32_t code, MessageParcel &data
         int32_t result = NETMANAGER_SUCCESS;
         auto requestFunc = itFunc->second;
         if (requestFunc != nullptr) {
-#ifndef UNITTEST_FORBID_FFRT
-            auto task = ffrtQueue_.submit_h([this, &data, &reply, &requestFunc, &result]() {
-#endif
-                result = (this->*requestFunc)(data, reply);
-#ifndef UNITTEST_FORBID_FFRT
-            }, ffrt::task_attr().name("FfrtOnRemoteRequest"));
-            ffrtQueue_.wait(task);
-#endif
+            result = (this->*requestFunc)(data, reply);
             NETMGR_LOG_D("stub call end, code = [%{public}d], ret = [%{public}d]", code, result);
             return result;
         }
@@ -216,11 +212,17 @@ bool NetPolicyServiceStub::SubCheckPermission(const std::string &permission, uin
 
 int32_t NetPolicyServiceStub::CheckPolicyPermission(uint32_t code)
 {
-    bool result = NetManagerPermission::IsSystemCaller();
-    if (!result) {
-        return NETMANAGER_ERR_NOT_SYSTEM_CALL;
-    }
     if (g_codeNPS.find(code) != g_codeNPS.end()) {
+        std::string permission = g_codeNPS[code];
+        if (permission.empty()) {
+            return NETMANAGER_SUCCESS;
+        }
+        bool result = NetManagerPermission::IsSystemCaller();
+        // LCOV_EXCL_START
+        if (!result) {
+            return NETMANAGER_ERR_NOT_SYSTEM_CALL;
+        }
+        // LCOV_EXCL_STOP
         result = SubCheckPermission(g_codeNPS[code], code);
         if (!result) {
             return NETMANAGER_ERR_PERMISSION_DENIED;
@@ -904,6 +906,30 @@ int32_t NetPolicyServiceStub::OnGetNetworkAccessPolicy(MessageParcel &data, Mess
         }
     }
 
+    return ret;
+}
+
+int32_t NetPolicyServiceStub::OnGetSelfNetworkAccessPolicy(MessageParcel &data, MessageParcel &reply)
+{
+    // LCOV_EXCL_START
+    NetAccessPolicy policy;
+    int32_t ret = GetSelfNetworkAccessPolicy(policy);
+    if (!reply.WriteInt32(ret)) {
+        NETMGR_LOG_E("Write int32 reply failed");
+        return NETMANAGER_ERR_WRITE_REPLY_FAIL;
+    }
+
+    if (ret == NETMANAGER_SUCCESS) {
+        if (!reply.WriteBool(policy.allowWiFi)) {
+            NETMGR_LOG_E("Write bool wifiAllow failed");
+            return NETMANAGER_ERR_WRITE_REPLY_FAIL;
+        }
+        if (!reply.WriteBool(policy.allowCellular)) {
+            NETMGR_LOG_E("Write bool cellularAllow failed");
+            return NETMANAGER_ERR_WRITE_REPLY_FAIL;
+        }
+    }
+    // LCOV_EXCL_STOP
     return ret;
 }
 

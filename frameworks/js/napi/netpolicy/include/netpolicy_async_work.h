@@ -44,6 +44,7 @@ public:
     static void ExecGetPowerSaveTrustlist(napi_env env, void *data);
     static void ExecSetNetworkAccessPolicy(napi_env env, void *data);
     static void ExecGetNetworkAccessPolicy(napi_env env, void *data);
+    static void ExecGetSelfNetworkAccessPolicy(napi_env env, void *data);
 
     static void SetPolicyByUidCallback(napi_env env, napi_status status, void *data);
     static void GetPolicyByUidCallback(napi_env env, napi_status status, void *data);
@@ -63,6 +64,7 @@ public:
     static void GetPowerSaveTrustlistCallback(napi_env env, napi_status status, void *data);
     static void SetNetworkAccessPolicyCallback(napi_env env, napi_status status, void *data);
     static void GetNetworkAccessPolicyCallback(napi_env env, napi_status status, void *data);
+    static void GetSelfNetworkAccessPolicyCallback(napi_env env, napi_status status, void *data);
 };
 } // namespace NetManagerStandard
 } // namespace OHOS

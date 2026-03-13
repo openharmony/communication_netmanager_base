@@ -68,6 +68,7 @@ ohos_shared_library("policy") {
     "src/set_power_save_allow_list_context.cpp",
     "src/update_remind_policy_context.cpp",
     "src/show_app_net_policy_settings.cpp",
+    "src/get_self_network_access_policy_context.cpp",
   ]
 
   configs = [ ":policy_config" ]

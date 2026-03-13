@@ -24,6 +24,7 @@ use crate::{
         Cleaner, ConnectionProperties, HttpProxy, NetAddress, NetBlockStatusInfo, NetCapabilities,
         NetCapabilityInfo, NetConnection, NetConnectionPropertyInfo, NetHandle, NetSpecifier,
     },
+    connection_error,
     error_code::convert_to_business_error,
     wrapper::{check_permission, ConnUnregisterHandle, NetConnClient},
 };

@@ -751,5 +751,36 @@ HWTEST_F(UtNetPolicyClient, OnRemoteDied001, TestSize.Level1)
     g_netPolicyClient->OnRemoteDied(remote);
     EXPECT_EQ(remote, nullptr);
 }
+
+/**
+ * @tc.name: GetSelfNetworkAccessPolicy001
+ * @tc.desc: Test NetPolicyClient GetSelfNetworkAccessPolicy.
+ * @tc.type: FUNC
+ */
+HWTEST_F(UtNetPolicyClient, GetSelfNetworkAccessPolicy001, TestSize.Level1)
+{
+    NetManagerBaseAccessToken token;
+    NetAccessPolicy policy;
+    int32_t result = g_netPolicyClient->GetSelfNetworkAccessPolicy(policy);
+    std::cout << "NetPolicyClient GetSelfNetworkAccessPolicy ret:" << result << std::endl;
+    ASSERT_EQ(result, NETMANAGER_SUCCESS);
+}
+
+/**
+ * @tc.name: GetSelfNetworkAccessPolicy002
+ * @tc.desc: Test NetPolicyClient GetSelfNetworkAccessPolicy with policy check.
+ * @tc.type: FUNC
+ */
+HWTEST_F(UtNetPolicyClient, GetSelfNetworkAccessPolicy002, TestSize.Level1)
+{
+    NetManagerBaseAccessToken token;
+    NetAccessPolicy policy;
+    policy.allowWiFi = false;
+    policy.allowCellular = false;
+    int32_t result = g_netPolicyClient->GetSelfNetworkAccessPolicy(policy);
+    std::cout << "NetPolicyClient GetSelfNetworkAccessPolicy allowWiFi:" << policy.allowWiFi
+              << " allowCellular:" << policy.allowCellular << std::endl;
+    ASSERT_EQ(result, NETMANAGER_SUCCESS);
+}
 } // namespace NetManagerStandard
 } // namespace OHOS

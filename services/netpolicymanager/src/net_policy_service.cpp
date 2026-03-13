@@ -44,6 +44,7 @@
 #include "os_account_manager.h"
 #include "system_timer.h"
 #include "unique_fd.h"
+#include "ipc_skeleton.h"
 
 #ifdef __LP64__
 const std::string LIB_LOAD_PATH = "/system/lib64/libnet_access_policy_dialog.z.so";
@@ -769,6 +770,32 @@ int32_t NetPolicyService::RemoveNetworkAccessPolicy(const std::vector<std::strin
     NetAccessPolicyConfigUtils::GetInstance().RemoveNetAccessPolicyConfig(bundleNames);
     RefreshNetworkAccessPolicyFromConfig();
     return NETMANAGER_SUCCESS;
+}
+
+int32_t NetPolicyService::GetSelfNetworkAccessPolicy(NetAccessPolicy &policy)
+{
+    uint32_t callingUid = static_cast<uint32_t>(IPCSkeleton::GetCallingUid());
+    
+    // Create parameter with flag=true to get self policy
+    AccessPolicyParameter parameter;
+    parameter.flag = true;
+    parameter.uid = callingUid;
+    parameter.callingUid = callingUid;
+    
+    // Call existing GetNetworkAccessPolicy function
+    AccessPolicySave policySave;
+    int32_t result = GetNetworkAccessPolicy(parameter, policySave);
+    // LCOV_EXCL_START
+    if (result == NETMANAGER_SUCCESS) {
+        NETMGR_LOG_I("GetSelfNetworkAccessPolicy 1.");
+        // Convert to NetAccessPolicy
+        policy.allowWiFi = policySave.policy.wifiAllow;
+        policy.allowCellular = policySave.policy.cellularAllow;
+    }
+    NETMGR_LOG_I("GetSelfNetworkAccessPolicy. uid:%{public}d, %{public}d, %{public}d",
+        callingUid, policy.allowWiFi, policy.allowCellular);
+    // LCOV_EXCL_STOP
+    return result;
 }
 
 int32_t NetPolicyService::DeleteNetworkAccessPolicy(uint32_t uid)

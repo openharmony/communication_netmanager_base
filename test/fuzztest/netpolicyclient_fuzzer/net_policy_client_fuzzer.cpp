@@ -768,6 +768,16 @@ void SetUidsDeniedListChainFuzzTest(const uint8_t *data, size_t size)
     OnRemoteRequest(static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_SET_IDLE_DENYLIST), dataParcel);
 }
 
+void GetSelfNetworkAccessPolicyFuzzTest(const uint8_t *data, size_t size)
+{
+    NetManagerBaseAccessToken token;
+    MessageParcel dataParcel;
+    if (!IsValidPolicyFuzzData(data, size, dataParcel)) {
+        return;
+    }
+    OnRemoteRequest(static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_GET_SELF_NETWORK_ACCESS_POLICY), dataParcel);
+}
+
 void FactoryResetPoliciesFuzzTest(const uint8_t *data, size_t size)
 {
     NetManagerBaseAccessToken token;
@@ -823,5 +833,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::NetManagerStandard::SetUidsDeniedListChainFuzzTest(data, size);
     OHOS::NetManagerStandard::AddNetworkAccessPolicyFuzzTest(data, size);
     OHOS::NetManagerStandard::RemoveNetworkAccessPolicyFuzzTest(data, size);
+    OHOS::NetManagerStandard::GetSelfNetworkAccessPolicyFuzzTest(data, size);
     return 0;
 }
