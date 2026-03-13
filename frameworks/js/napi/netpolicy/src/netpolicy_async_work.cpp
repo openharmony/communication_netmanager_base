@@ -124,7 +124,8 @@ void NetPolicyAsyncWork::ExecGetNetworkAccessPolicy(napi_env env, void *data)
 
 void NetPolicyAsyncWork::ExecGetSelfNetworkAccessPolicy(napi_env env, void *data)
 {
-    BaseAsyncWork::ExecAsyncWork<GetSelfNetworkAccessPolicyContext, NetPolicyExec::ExecGetSelfNetworkAccessPolicy>(env, data);
+    BaseAsyncWork::ExecAsyncWork<GetSelfNetworkAccessPolicyContext,
+        NetPolicyExec::ExecGetSelfNetworkAccessPolicy>(env, data);
 }
 
 void NetPolicyAsyncWork::SetPolicyByUidCallback(napi_env env, napi_status status, void *data)
