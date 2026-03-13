@@ -22,8 +22,8 @@
 
 namespace OHOS::NetManagerStandard {
 
-GetSelfNetworkAccessPolicyContext::GetSelfNetworkAccessPolicyContext(napi_env env, std::shared_ptr<EventManager>& manager)
-    : BaseContext(env, manager)
+GetSelfNetworkAccessPolicyContext::GetSelfNetworkAccessPolicyContext(
+    napi_env env, std::shared_ptr<EventManager>& manager): BaseContext(env, manager)
 {
     SetReleaseVersion(API_VERSION_26);
 }
