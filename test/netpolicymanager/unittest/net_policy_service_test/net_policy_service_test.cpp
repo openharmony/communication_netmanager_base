@@ -380,5 +380,32 @@ HWTEST_F(UtNetPolicyService, OnReceiveEvent002, TestSize.Level1)
     subscriber->OnReceiveEvent(data);
     EXPECT_NE(subscriber, nullptr);
 }
+
+HWTEST_F(UtNetPolicyService, GetSelfNetworkAccessPolicy001, TestSize.Level1)
+{
+    NetAccessPolicy policy;
+    auto ret = instance_->GetSelfNetworkAccessPolicy(policy);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+    EXPECT_TRUE(policy.allowWiFi);
+    EXPECT_TRUE(policy.allowCellular);
+}
+
+HWTEST_F(UtNetPolicyService, GetSelfNetworkAccessPolicy002, TestSize.Level1)
+{
+    instance_->netPolicyRule_ = nullptr;
+    NetAccessPolicy policy;
+    auto ret = instance_->GetSelfNetworkAccessPolicy(policy);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+    instance_->netPolicyRule_ = std::make_shared<NetPolicyRule>();
+}
+
+HWTEST_F(UtNetPolicyService, GetSelfNetworkAccessPolicy003, TestSize.Level1)
+{
+    NetAccessPolicy policy;
+    policy.allowWiFi = false;
+    policy.allowCellular = false;
+    auto ret = instance_->GetSelfNetworkAccessPolicy(policy);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+}
 } // namespace NetManagerStandard
 } // namespace OHOS

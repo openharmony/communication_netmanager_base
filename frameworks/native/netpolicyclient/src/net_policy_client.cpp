@@ -465,6 +465,19 @@ int32_t NetPolicyClient::GetNetworkAccessPolicy(AccessPolicyParameter parameter,
     return proxy->GetNetworkAccessPolicy(parameter, policy);
 }
 
+int32_t NetPolicyClient::GetSelfNetworkAccessPolicy(NetAccessPolicy& policy)
+{
+    sptr<INetPolicyService> proxy = GetProxy();
+    // LCOV_EXCL_START
+    if (proxy == nullptr) {
+        NETMGR_LOG_E("proxy is nullptr");
+        return NETMANAGER_ERR_GET_PROXY_FAIL;
+    }
+    // LCOV_EXCL_STOP
+    int32_t ret =  proxy->GetSelfNetworkAccessPolicy(policy);
+    return ret;
+}
+
 int32_t NetPolicyClient::NotifyNetAccessPolicyDiag(uint32_t uid)
 {
     sptr<INetPolicyService> proxy = GetProxy();
