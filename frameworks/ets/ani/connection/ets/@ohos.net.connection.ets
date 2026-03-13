@@ -546,7 +546,11 @@ export default namespace connection {
   }
 
   export interface NetConnection {
-      on(type: string, callback: Callback<Any>): void;
+      onNetAvailable(callback: Callback<NetHandle>): void;
+
+      onNetCapabilitiesChange(callback: Callback<NetCapabilityInfo>): void;
+
+      onNetConnectionPropertiesChange(callback: Callback<NetConnectionPropertyInfo>): void;
 
       onNetLost(callback: Callback<NetHandle>): void;
 
