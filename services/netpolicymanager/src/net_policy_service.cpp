@@ -709,6 +709,7 @@ int32_t NetPolicyService::GetNetworkAccessPolicy(AccessPolicyParameter parameter
 {
     NETMGR_LOG_I("GetNetworkAccessPolicy enter.");
     NetAccessPolicyRDB netAccessPolicy;
+    uint32_t userId = parameter.callingUid / AppExecFwk::Constants::BASE_USER_RANGE;
 
     auto bundleMgrProxy = GetBundleMgrProxy();
     if (bundleMgrProxy == nullptr) {
@@ -736,7 +737,7 @@ int32_t NetPolicyService::GetNetworkAccessPolicy(AccessPolicyParameter parameter
 
     std::vector<AppExecFwk::ApplicationInfo> appInfos;
     bool retC = bundleMgrProxy->GetApplicationInfos(AppExecFwk::ApplicationFlag::GET_APPLICATION_INFO_WITH_PERMISSION,
-                                                    static_cast<uint32_t>(parameter.userId), appInfos);
+                                                    static_cast<uint32_t>(userId), appInfos);
     if (!retC) {
         NETMGR_LOG_E("GetApplicationInfos Error");
         return NETMANAGER_ERR_INTERNAL;
@@ -776,13 +777,11 @@ int32_t NetPolicyService::GetSelfNetworkAccessPolicy(NetAccessPolicy &policy)
 {
     uint32_t callingUid = static_cast<uint32_t>(IPCSkeleton::GetCallingUid());
     
-    // Create parameter with flag=true to get self policy
     AccessPolicyParameter parameter;
     parameter.flag = true;
     parameter.uid = callingUid;
     parameter.callingUid = callingUid;
     
-    // Call existing GetNetworkAccessPolicy function
     AccessPolicySave policySave;
     int32_t result = GetNetworkAccessPolicy(parameter, policySave);
     // LCOV_EXCL_START
