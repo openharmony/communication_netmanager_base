@@ -819,14 +819,13 @@ int32_t NetPolicyServiceProxy::GetNetworkAccessPolicy(AccessPolicyParameter para
     }
 
     uint32_t callingUid = static_cast<uint32_t>(IPCSkeleton::GetCallingUid());
-    parameter.userId = callingUid / AppExecFwk::Constants::BASE_USER_RANGE;
     if (!data.WriteBool(parameter.flag)) {
         return false;
     }
     if (!data.WriteInt32(parameter.uid)) {
         return false;
     }
-    if (!data.WriteUint32(parameter.userId)) {
+    if (!data.WriteUint32(callingUid)) {
         return false;
     }
 

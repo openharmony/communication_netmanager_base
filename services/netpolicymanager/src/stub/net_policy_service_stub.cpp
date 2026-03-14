@@ -872,7 +872,7 @@ int32_t NetPolicyServiceStub::OnGetNetworkAccessPolicy(MessageParcel &data, Mess
     NETMGR_LOG_I("GetNetworkAccessPolicy callingUid/callingPid: %{public}d/%{public}d", IPCSkeleton::GetCallingUid(),
                  IPCSkeleton::GetCallingPid());
     int32_t uid = 0;
-    uint32_t userId = 1;
+    uint32_t callingUid = 1;
     bool flag = false;
     if (!data.ReadBool(flag)) {
         return NETMANAGER_ERR_READ_DATA_FAIL;
@@ -882,7 +882,7 @@ int32_t NetPolicyServiceStub::OnGetNetworkAccessPolicy(MessageParcel &data, Mess
         return NETMANAGER_ERR_READ_DATA_FAIL;
     }
 
-    if (!data.ReadUint32(userId)) {
+    if (!data.ReadUint32(callingUid)) {
         return NETMANAGER_ERR_READ_DATA_FAIL;
     }
 
@@ -890,7 +890,7 @@ int32_t NetPolicyServiceStub::OnGetNetworkAccessPolicy(MessageParcel &data, Mess
     AccessPolicyParameter parameters;
     parameters.flag = flag;
     parameters.uid = uid;
-    parameters.userId = userId;
+    parameters.callingUid = callingUid;
 
     int32_t ret = GetNetworkAccessPolicy(parameters, policies);
     if (!reply.WriteInt32(ret)) {

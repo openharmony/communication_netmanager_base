@@ -52,7 +52,7 @@ public:
     AccessPolicyParameter() = default;
     bool flag = false;
     uint32_t uid = 0;
-    uint32_t userId = 0;
+    uint32_t callingUid = 0;
 };
 
 class AccessPolicySave {
