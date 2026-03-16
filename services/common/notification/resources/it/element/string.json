@@ -2,30 +2,30 @@
     "string":[
         {
             "name":"netstats_excess_daymark_notofication_title",
-            "value":"Sopra contrassegno giorno",
+            "value":"Sopra il limite giornaliero",
             "attr":{
-                "priority":"translate"
+                "priority":"LT"
             }
         },
         {
             "name":"netstats_month_limit_message",
-            "value":"(%s) Limite mensile di dati raggiunto",
+            "value":"Limite mensile di dati raggiunto (%s)",
             "attr":{
-                "priority":"translate"
+                "priority":"LT"
             }
         },
         {
             "name":"netstats_excess_monthmark_notofication_title",
             "value":"Superato il limite mensile",
             "attr":{
-                "priority":"translate"
+                "priority":"LT"
             }
         },
         {
             "name":"netstats_daily_notify_message",
             "value":"Limite utilizzo dati del giorno (%s)",
             "attr":{
-                "priority":"translate"
+                "priority":"LT"
             }
         },
         {
@@ -39,7 +39,7 @@
             "name":"netstats_excess_monthlimit_notofication_title_sub",
             "value":"Avviso utilizzo dati SIM %d",
             "attr":{
-                "priority":"translate"
+                "priority":"LT"
             }
         },
         {
@@ -51,16 +51,16 @@
         },
         {
             "name":"netstats_month_notify_message",
-            "value":"Utilizzo dati del mese ha raggiunto %s del limite",
+            "value":"L'utilizzo dati del mese ha raggiunto il %s del limite",
             "attr":{
-                "priority":"translate"
+                "priority":"LT"
             }
         },
         {
             "name":"netstats_excess_monthlimit_notofication_title",
-            "value":"Sopra il limite mensile",
+            "value":"Superato il limite mensile",
             "attr":{
-                "priority":"translate"
+                "priority":"LT"
             }
         }
     ]
