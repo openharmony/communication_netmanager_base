@@ -852,16 +852,21 @@ void Network::SetNetCaps(const std::set<NetCap> &netCaps)
 
 void Network::NetDetectionForDnsHealth(bool dnsHealthSuccess)
 {
+    NETMGR_LOG_D("Enter NetDetectionForDnsHealthSync");
     if (netMonitor_ == nullptr) {
         NETMGR_LOG_D("netMonitor_ is nullptr");
         return;
     }
     NetDetectionStatus lastDetectResult = detectResult_;
-    if (lastDetectResult != UNKNOWN_STATE) {
-        NETMGR_LOG_I("NetDetectDns %{public}d,%{public}d", lastDetectResult, dnsHealthSuccess);
+    {
+        static NetDetectionStatus preStatus = UNKNOWN_STATE;
+        if (preStatus != lastDetectResult) {
+            NETMGR_LOG_I("Last netDetectionState: [%{public}d->%{public}d]", preStatus, lastDetectResult);
+            preStatus = lastDetectResult;
+        }
     }
     if (IsDetectionForDnsSuccess(lastDetectResult, dnsHealthSuccess)) {
-        NETMGR_LOG_D("Dns report success, so restart detection.");
+        NETMGR_LOG_I("Dns report success, so restart detection.");
         isDetectingForDns_ = true;
         netMonitor_->Start();
     } else if (IsDetectionForDnsFail(lastDetectResult, dnsHealthSuccess)) {
