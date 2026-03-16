@@ -14,7 +14,7 @@
         },
         {
             "name":"netstats_daily_notify_message",
-            "value":"[TS_1010602]_Data used today at limit (%s)"
+            "value":"[TS_1010602]_Daily data limit reached (%s)"
         },
         {
             "name":"netstats_excess_monthmark_notofication_title_sub",

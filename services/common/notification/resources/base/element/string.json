@@ -58,7 +58,7 @@
         },
         {
             "name":"netstats_daily_notify_message",
-            "value":"Data used today at limit %s",
+            "value":"Daily data limit reached (%s)",
             "attr":{
                 "priority":"translate"
             }
