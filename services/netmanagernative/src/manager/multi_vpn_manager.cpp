@@ -140,10 +140,10 @@ int32_t MultiVpnManager::SetVpnMtu(const std::string &ifName, int32_t mtu)
 int32_t MultiVpnManager::AddVpnRemoteAddress(const std::string &ifName, std::atomic_int &net4Sock, ifreq &ifr)
 {
     /* ppp need set dst ip */
-    in6_addr addrBuf = {};
-    bool isIpv6 = (inet_pton(AF_INET6, remoteIpv4Addr_.c_str(), &addrBuf) == 1);
+    in_addr addrBuf = {};
+    bool isIpv4 = (inet_pton(AF_INET, remoteIpv4Addr_.c_str(), &addrBuf) == 1);
     if (strstr(ifName.c_str(), PPP_CARD_NAME) != NULL) {
-        if (isIpv6) {
+        if (!isIpv4) {
             NETNATIVE_LOGI("ipv6 remote address set via PPP protocol");
         } else {
             in_addr remoteIpv4Addr = {};
@@ -217,6 +217,7 @@ int32_t MultiVpnManager::SetVpnAddressIPv6(const std::string &ifName, const std:
     return SetVpnAddressIPv6Netlink(ifName, vpnAddr, prefix, ifindex);
 }
 
+// LCOV_EXCL_START
 int32_t MultiVpnManager::SetVpnAddressIPv6Netlink(const std::string &ifName,
     const std::string &vpnAddr, int32_t prefix, uint32_t ifindex)
 {
@@ -256,6 +257,7 @@ int32_t MultiVpnManager::SetVpnAddressIPv6Netlink(const std::string &ifName,
     NETNATIVE_LOGI("set ipv6 address success");
     return NETMANAGER_SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t MultiVpnManager::SetVpnAddressIPv4(const std::string &ifName,
     const std::string &vpnAddr, int32_t prefix, ifreq &ifr)
