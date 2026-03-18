@@ -23,7 +23,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-#include <net/if.h>
 #include "init_socket.h"
 #include "net_manager_constants.h"
 #include "netmanager_base_common_utils.h"
@@ -139,8 +138,8 @@ int32_t MultiVpnManager::SetVpnMtu(const std::string &ifName, int32_t mtu)
 
 int32_t MultiVpnManager::AddVpnRemoteAddress(const std::string &ifName, std::atomic_int &net4Sock, ifreq &ifr)
 {
+    /* ppp need set dst ip */
     bool isIpv6 = (remoteIpv4Addr_.find(':') != std::string::npos);
-
     if (strstr(ifName.c_str(), PPP_CARD_NAME) != NULL) {
         if (isIpv6) {
             NETNATIVE_LOGI("ipv6 remote address set via PPP protocol");
@@ -184,7 +183,7 @@ int32_t MultiVpnManager::SetVpnAddressIPv6(const std::string &ifName, const std:
         NETNATIVE_LOGE("create SOCK_DGRAM ipv6 failed: %{public}d", errno);
         return NETMANAGER_ERROR;
     }
-    
+
     char addrbuf[sizeof(in6_addr)] = {0};
     if (inet_pton(AF_INET6, vpnAddr.c_str(), addrbuf) != 1) {
         NETNATIVE_LOGE("ipv6 addr inet_pton error");
@@ -279,6 +278,7 @@ int32_t MultiVpnManager::SetVpnAddressIPv4(const std::string &ifName,
         close(net4Sock);
         return NETMANAGER_ERROR;
     }
+    /* ppp need set dst ip */
     if (AddVpnRemoteAddress(ifName, net4Sock, ifr) != NETMANAGER_SUCCESS) {
         close(net4Sock);
         return NETMANAGER_ERROR;
