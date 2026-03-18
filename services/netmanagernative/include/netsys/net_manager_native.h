@@ -20,12 +20,14 @@
 #include <string>
 #include <vector>
 
+#include "ffrt.h"
 #include "bandwidth_manager.h"
 #include "conn_manager.h"
 #include "dns_manager.h"
 #include "firewall_manager.h"
 #include "interface_manager.h"
 #include "interface_type.h"
+#include "mptcp_manager.h"
 #include "net_conn_info.h"
 #include "route_manager.h"
 #include "vnic_manager.h"
@@ -196,6 +198,8 @@ private:
     std::shared_ptr<InterfaceManager> interfaceManager_ = nullptr;
     std::shared_ptr<SharingManager> sharingManager_ = nullptr;
     std::shared_ptr<DnsManager> dnsManager_ = nullptr;
+    std::shared_ptr<MptcpManager> mptcpManager_ = nullptr;
+    std::shared_ptr<ffrt::queue> mptcpFfrtQueue_ = nullptr;
     static inline std::vector<uint32_t> interfaceIdex_;
 };
 } // namespace nmd
