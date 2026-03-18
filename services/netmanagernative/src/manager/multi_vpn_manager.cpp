@@ -216,7 +216,8 @@ int32_t MultiVpnManager::SetVpnAddressIPv6(const std::string &ifName, const std:
     return SetVpnAddressIPv6Netlink(ifName, vpnAddr, prefix, ifindex);
 }
 
-int32_t MultiVpnManager::SetVpnAddressIPv6Netlink(const std::string &ifName, const std::string &vpnAddr, int32_t prefix, uint32_t ifindex)
+int32_t MultiVpnManager::SetVpnAddressIPv6Netlink(const std::string &ifName,
+    const std::string &vpnAddr, int32_t prefix, uint32_t ifindex)
 {
     char addrbuf[sizeof(in6_addr)] = {0};
     if (inet_pton(AF_INET6, vpnAddr.c_str(), addrbuf) != 1) {
@@ -255,7 +256,8 @@ int32_t MultiVpnManager::SetVpnAddressIPv6Netlink(const std::string &ifName, con
     return NETMANAGER_SUCCESS;
 }
 
-int32_t MultiVpnManager::SetVpnAddressIPv4(const std::string &ifName, const std::string &vpnAddr, int32_t prefix, ifreq &ifr)
+int32_t MultiVpnManager::SetVpnAddressIPv4(const std::string &ifName,
+    const std::string &vpnAddr, int32_t prefix, ifreq &ifr)
 {
     std::atomic_int net4Sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (net4Sock < 0) {
