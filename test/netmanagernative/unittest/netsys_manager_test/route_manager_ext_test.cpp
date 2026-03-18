@@ -517,5 +517,65 @@ HWTEST_F(RouteManagerExtTest, CheckMultiVpnCall001, TestSize.Level1)
     testInterfaceName = "";
     EXPECT_FALSE(RouteManager::CheckMultiVpnCall(testInterfaceName));
 }
+
+HWTEST_F(RouteManagerExtTest, UpdateVpnRulesIPv6Test001, TestSize.Level1)
+{
+    int32_t result = RouteManager::SetVpnCallMode(TEST_EXT_VPN_CALL);
+    EXPECT_EQ(result, NETMANAGER_SUCCESS);
+
+    uint16_t netId = 100;
+    std::string interface = "testInterface";
+    std::vector<std::string> extMessages = {"2001:db8::1", "192.168.1.1"};
+    bool add = true;
+    auto ret = RouteManager::UpdateVpnRules(netId, interface, extMessages, add);
+    EXPECT_EQ(ret, 0);
+
+    add = false;
+    ret = RouteManager::UpdateVpnRules(netId, interface, extMessages, add);
+    EXPECT_EQ(ret, 0);
+}
+
+HWTEST_F(RouteManagerExtTest, UpdateVpnRulesIPv6Test002, TestSize.Level1)
+{
+    int32_t result = RouteManager::SetVpnCallMode(TEST_EXT_VPN_CALL);
+    EXPECT_EQ(result, NETMANAGER_SUCCESS);
+
+    uint16_t netId = 100;
+    std::string interface = "testInterface";
+    std::vector<std::string> extMessages = {"invalid_ip", "192.168.1.1"};
+    bool add = true;
+    auto ret = RouteManager::UpdateVpnRules(netId, interface, extMessages, add);
+    EXPECT_EQ(ret, -1);
+}
+
+HWTEST_F(RouteManagerExtTest, UpdateOutcomingIpMarkIPv6Test001, TestSize.Level1)
+{
+    int32_t result = RouteManager::SetVpnCallMode(TEST_EXT_VPN_CALL);
+    EXPECT_EQ(result, NETMANAGER_SUCCESS);
+
+    uint16_t netId = 100;
+    std::string addr = "2001:db8::1";
+    bool add = true;
+    auto ret = RouteManager::UpdateOutcomingIpMark(netId, addr, add);
+    EXPECT_EQ(ret, 0);
+
+    ret = RouteManager::UpdateOutcomingIpMark(netId, addr, false);
+    EXPECT_EQ(ret, 0);
+}
+
+HWTEST_F(RouteManagerExtTest, UpdateOutcomingIpMarkIPv6Test002, TestSize.Level1)
+{
+    int32_t result = RouteManager::SetVpnCallMode(TEST_EXT_VPN_CALL);
+    EXPECT_EQ(result, NETMANAGER_SUCCESS);
+
+    uint16_t netId = 100;
+    std::string addr = "192.168.1.1";
+    bool add = true;
+    auto ret = RouteManager::UpdateOutcomingIpMark(netId, addr, add);
+    EXPECT_EQ(ret, 0);
+
+    ret = RouteManager::UpdateOutcomingIpMark(netId, addr, false);
+    EXPECT_EQ(ret, 0);
+}
 } // namespace nmd
 } // namespace OHOS
