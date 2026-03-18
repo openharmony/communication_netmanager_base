@@ -140,7 +140,7 @@ int32_t MultiVpnManager::SetVpnMtu(const std::string &ifName, int32_t mtu)
 int32_t MultiVpnManager::AddVpnRemoteAddress(const std::string &ifName, std::atomic_int &net4Sock, ifreq &ifr)
 {
     /* ppp need set dst ip */
-    bool isIpv6 = (remoteIpv4Addr_.find(':') != std::string::npos);
+    bool isIpv6 = (inet_pton(AF_INET6, remoteIpv4Addr_.c_str(), nullptr) == 1);
     if (strstr(ifName.c_str(), PPP_CARD_NAME) != NULL) {
         if (isIpv6) {
             NETNATIVE_LOGI("ipv6 remote address set via PPP protocol");
@@ -169,7 +169,7 @@ int32_t MultiVpnManager::SetVpnAddress(const std::string &ifName, const std::str
         return NETMANAGER_ERROR;
     }
 
-    bool isIpv6 = (vpnAddr.find(':') != std::string::npos);
+    bool isIpv6 = (inet_pton(AF_INET6, vpnAddr.c_str(), nullptr) == 1);
     if (isIpv6) {
         return SetVpnAddressIPv6(ifName, vpnAddr, prefix);
     } else {
