@@ -20,6 +20,8 @@
 #include <linux/if.h>
 #include <string>
 #include <mutex>
+#include <netinet/in.h>
+#include <sys/socket.h>
 
 namespace OHOS {
 namespace NetManagerStandard {
@@ -67,6 +69,11 @@ private:
     int32_t GetMultiVpnFd(const std::string &ifName, int32_t &multiVpnFd);
     int32_t DestroyMultiVpnFd(const std::string &ifName);
     int32_t CreateMultiTunInterface(const std::string &ifName);
+    int32_t SetVpnAddressIPv6(const std::string &ifName, const std::string &vpnAddr, int32_t prefix);
+    int32_t SetVpnAddressIPv4(const std::string &ifName, const std::string &vpnAddr, int32_t prefix, ifreq &ifr);
+    int32_t RenameInterface(const std::string &oldName, const std::string &newName);
+    int32_t SetVpnAddressIPv6Netlink(const std::string &ifName,
+        const std::string &vpnAddr, int32_t prefix, uint32_t ifindex);
     void StartMultiVpnSocketListen();
     void StartMultiVpnInterfaceFdListen();
 

@@ -393,7 +393,7 @@ int32_t RouteManager::UpdateVpnRules(uint16_t netId, const std::string &interfac
     bool isTunVpn = CheckTunVpnCall(interface);
 
     for (const auto& msg : extMessages) {
-        if (!CommonUtils::IsValidIPV4(msg)) {
+        if (!CommonUtils::IsValidIPV4(msg) && !CommonUtils::IsValidIPV6(msg)) {
             NETNATIVE_LOGE("failed to add update vpn rules on interface of netId, %{public}u.", netId);
             return ROUTEMANAGER_ERROR;
         }
@@ -427,8 +427,10 @@ int32_t RouteManager::UpdateOutcomingIpMark(uint16_t netId, const std::string &a
     ss << "-t mangle " << action << LOCAL_MANGLE_OUTPUT << " -s " << addr
     << " -j MARK --set-mark 0x" << std::nouppercase
     << std::hex << fwmark.intValue;
+    
+    IpType ipType = CommonUtils::IsValidIPV6(addr) ? IPTYPE_IPV6 : IPTYPE_IPV4;
     // need to call IptablesWrapper's RunCommand function.
-    if (IptablesWrapper::GetInstance()->RunCommand(IPTYPE_IPV4, ss.str()) == ROUTEMANAGER_ERROR) {
+    if (IptablesWrapper::GetInstance()->RunCommand(ipType, ss.str()) == ROUTEMANAGER_ERROR) {
         NETNATIVE_LOGE("UpdateOutcomingIpMark error");
         return ROUTEMANAGER_ERROR;
     }
