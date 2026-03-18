@@ -38,6 +38,7 @@ namespace {
 constexpr uint32_t DEFAULT_MTU = 1500;
 constexpr int32_t NET_MASK_MAX_LENGTH = 32;
 constexpr int32_t MAX_UNIX_SOCKET_CLIENT = 5;
+constexpr int32_t IPV6_MAX_LENGTH = 128;
 } // namespace
 
 int32_t MultiVpnManager::SendVpnInterfaceFdToClient(int32_t clientFd, int32_t tunFd)
@@ -191,7 +192,7 @@ int32_t MultiVpnManager::SetVpnAddressIPv6(const std::string &ifName, const std:
         return NETMANAGER_ERROR;
     }
 
-    if (prefix < 0 || prefix > 128) {
+    if (prefix < 0 || prefix > IPV6_MAX_LENGTH) {
         NETNATIVE_LOGE("ipv6 prefix: %{public}d error", prefix);
         close(net6Sock);
         return NETMANAGER_ERROR;
