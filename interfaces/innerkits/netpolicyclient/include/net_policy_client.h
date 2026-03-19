@@ -21,6 +21,7 @@
 #include "singleton.h"
 
 #include "i_net_policy_service.h"
+#include "net_access_policy.h"
 #include "net_policy_constants.h"
 #include "net_quota_policy.h"
 
@@ -328,6 +329,16 @@ public:
      * @systemapi Hide this for inner system use.
      */
     int32_t GetNetworkAccessPolicy(AccessPolicyParameter parameter, AccessPolicySave& policy);
+
+    /**
+     * Query the network access policy of the calling application.
+     *
+     * @param policy The network access policy of application, {@link NetAccessPolicy}.
+     * @return Returns 0 success. Otherwise fail, {@link NetPolicyResultCode}.
+     * @permission ohos.permission.CONNECTIVITY_INTERNAL
+     * @systemapi Hide this for inner system use.
+     */
+    int32_t GetSelfNetworkAccessPolicy(NetAccessPolicy& policy);
 
     int32_t NotifyNetAccessPolicyDiag(uint32_t uid);
 

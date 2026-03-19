@@ -241,6 +241,19 @@ declare namespace policy {
   function getNetworkAccessPolicy(): Promise<UidNetworkAccessPolicy>;
 
   /**
+   * Get the network access policy of the calling application.
+   *
+   * @returns { Promise<SelfNetworkAccessPolicy> } Returns the network access policy of the calling application.
+   * @throws { BusinessError } 201 - Permission denied.
+   * @throws { BusinessError } 202 - Non-system applications use system APIs.
+   * @throws { BusinessError } 2100002 - Operation failed. Cannot connect to service.
+   * @throws { BusinessError } 2100003 - System internal error,such as nullptr.
+   * @syscap SystemCapability.Communication.NetManager.Core
+   * @since 26
+   */
+  function getSelfNetworkAccessPolicy(): Promise<SelfNetworkAccessPolicy>;
+
+  /**
    * Register uid policy change listener.
    *
    * @permission ohos.permission.CONNECTIVITY_INTERNAL
@@ -448,6 +461,29 @@ declare namespace policy {
      * @since 12
      */
     allowCellular?: boolean;
+  }
+
+  /**
+   * Network access policy of the calling application.
+   * @interface NetAccessPolicy
+   * @syscap SystemCapability.Communication.NetManager.Core
+   * @since 26
+   */
+  export interface NetAccessPolicy {
+    /**
+     * Indicate whether the calling application can be allowed to access the network by wifi.
+     * @type { boolean }
+     * @syscap SystemCapability.Communication.NetManager.Core
+     * @since 26
+     */
+    allowWiFi: boolean;
+    /**
+     * Indicate whether the calling application can be allowed to access the network by cellular.
+     * @type { boolean }
+     * @syscap SystemCapability.Communication.NetManager.Core
+     * @since 26
+     */
+    allowCellular: boolean;
   }
 
   /**

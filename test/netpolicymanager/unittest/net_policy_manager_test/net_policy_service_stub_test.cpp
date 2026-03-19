@@ -212,6 +212,13 @@ public:
     {
         return 0;
     }
+
+    int32_t GetSelfNetworkAccessPolicy(NetAccessPolicy& policy) override
+    {
+        policy.allowWiFi = true;
+        policy.allowCellular = true;
+        return 0;
+    }
 };
 
 } // namespace
@@ -779,6 +786,39 @@ HWTEST_F(NetPolicyServiceStubTest, OnSetUidsDeniedListChain001, TestSize.Level1)
     MessageOption option;
     int32_t ret = instance_->OnRemoteRequest(
         static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_SET_IDLE_DENYLIST), data, reply, option);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+}
+
+/**
+ * @tc.name: OnGetSelfNetworkAccessPolicy001
+ * @tc.desc: Test NetPolicyServiceStub OnGetSelfNetworkAccessPolicy.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NetPolicyServiceStubTest, OnGetSelfNetworkAccessPolicy001, TestSize.Level1)
+{
+    MessageParcel data;
+    data.WriteBool(true);
+    MessageParcel reply;
+    MessageOption option;
+    int32_t ret = instance_->OnRemoteRequest(
+        static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_GET_SELF_NETWORK_ACCESS_POLICY), data, reply, option);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+}
+
+/**
+ * @tc.name: OnGetSelfNetworkAccessPolicy002
+ * @tc.desc: Test NetPolicyServiceStub OnGetSelfNetworkAccessPolicy with interface token.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NetPolicyServiceStubTest, OnGetSelfNetworkAccessPolicy002, TestSize.Level1)
+{
+    MessageParcel data;
+    data.WriteBool(false);
+    ASSERT_NE(data.WriteInterfaceToken(NetPolicyServiceStub::GetDescriptor()), false);
+    MessageParcel reply;
+    MessageOption option;
+    int32_t ret = instance_->OnRemoteRequest(
+        static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_GET_SELF_NETWORK_ACCESS_POLICY), data, reply, option);
     EXPECT_EQ(ret, NETMANAGER_SUCCESS);
 }
 } // namespace NetManagerStandard

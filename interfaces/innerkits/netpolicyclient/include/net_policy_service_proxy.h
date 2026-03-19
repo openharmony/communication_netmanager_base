@@ -52,6 +52,7 @@ public:
     int32_t FactoryResetPolicies() override;
     int32_t SetNetworkAccessPolicy(uint32_t uid, NetworkAccessPolicy policy, bool reconfirmFlag) override;
     int32_t GetNetworkAccessPolicy(AccessPolicyParameter parameter, AccessPolicySave& policy) override;
+    int32_t GetSelfNetworkAccessPolicy(NetAccessPolicy& policy) override;
     int32_t NotifyNetAccessPolicyDiag(uint32_t uid) override;
     int32_t SetNicTrafficAllowed(const std::vector<std::string> &ifaceNames, bool status) override;
     int32_t SetInternetAccessByIpForWifiShare(

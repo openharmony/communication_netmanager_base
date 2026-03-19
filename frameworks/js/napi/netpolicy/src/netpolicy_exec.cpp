@@ -248,6 +248,17 @@ bool NetPolicyExec::ExecGetNetworkAccessPolicy(GetNetworkAccessPolicyContext *co
     return true;
 }
 
+bool NetPolicyExec::ExecGetSelfNetworkAccessPolicy(GetSelfNetworkAccessPolicyContext *context)
+{
+    int32_t errorCode = NetPolicyClient::GetInstance().GetSelfNetworkAccessPolicy(context->policy_);
+    if (errorCode != NETMANAGER_SUCCESS) {
+        NETMANAGER_BASE_LOGE("exec GetSelfNetworkAccessPolicy failed errorCode: %{public}d", errorCode);
+        context->SetErrorCode(errorCode);
+        return false;
+    }
+    return true;
+}
+
 napi_value NetPolicyExec::SetPolicyByUidCallback(SetPolicyByUidContext *context)
 {
     return NapiUtils::GetUndefined(context->GetEnv());
@@ -420,6 +431,14 @@ napi_value NetPolicyExec::GetNetworkAccessPolicyCallback(GetNetworkAccessPolicyC
         NapiUtils::SetNamedProperty(context->GetEnv(), result, std::to_string(item.first).c_str(), obj);
     }
     return result;
+}
+
+napi_value NetPolicyExec::GetSelfNetworkAccessPolicyCallback(GetSelfNetworkAccessPolicyContext *context)
+{
+    napi_value obj = NapiUtils::CreateObject(context->GetEnv());
+    NapiUtils::SetBooleanProperty(context->GetEnv(), obj, "allowWiFi", context->policy_.allowWiFi);
+    NapiUtils::SetBooleanProperty(context->GetEnv(), obj, "allowCellular", context->policy_.allowCellular);
+    return obj;
 }
 } // namespace NetManagerStandard
 } // namespace OHOS

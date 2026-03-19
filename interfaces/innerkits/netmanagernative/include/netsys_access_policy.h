@@ -22,6 +22,12 @@
 
 namespace OHOS {
 namespace NetManagerStandard {
+class NetAccessPolicy {
+public:
+    NetAccessPolicy() = default;
+    bool allowWiFi = true;     // true means allow. false means deny.
+    bool allowCellular = true;  // true means allow. false means deny.
+};
 
 class NetworkAccessPolicy {
 public:
@@ -40,7 +46,7 @@ public:
     AccessPolicyParameter() = default;
     bool flag = false;
     uint32_t uid = 0;
-    uint32_t userId = 0;
+    uint32_t callingUid = 0;
 };
 
 class AccessPolicySave {
