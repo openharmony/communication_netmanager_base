@@ -51,7 +51,6 @@ std::map<uint32_t, const char *> g_codeNPS = {
     {static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_CHECK_PERMISSION), Permission::MANAGE_NET_STRATEGY},
     {static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_SET_NETWORK_ACCESS_POLICY), Permission::MANAGE_NET_STRATEGY},
     {static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_GET_NETWORK_ACCESS_POLICY), Permission::MANAGE_NET_STRATEGY},
-    {static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_GET_SELF_NETWORK_ACCESS_POLICY), ""},
     {static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_NOTIFY_NETWORK_ACCESS_POLICY_DIAG),
      Permission::MANAGE_NET_STRATEGY},
     {static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_SET_NIC_TRAFFIC_ALLOWED), Permission::MANAGE_NET_STRATEGY},
@@ -63,6 +62,9 @@ std::map<uint32_t, const char *> g_codeNPS = {
      Permission::MANAGE_NET_STRATEGY},
     {static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_REMOVE_NETWORK_ACCESS_POLICY),
      Permission::MANAGE_NET_STRATEGY},
+};
+std::map<uint32_t, const char *> g_pub_codeNPS = {
+    {static_cast<uint32_t>(PolicyInterfaceCode::CMD_NPS_GET_SELF_NETWORK_ACCESS_POLICY), ""},
 };
 constexpr uint32_t MAX_IFACENAMES_SIZE = 128;
 constexpr int32_t MAX_LIST_SIZE = 1000;
@@ -213,10 +215,6 @@ bool NetPolicyServiceStub::SubCheckPermission(const std::string &permission, uin
 int32_t NetPolicyServiceStub::CheckPolicyPermission(uint32_t code)
 {
     if (g_codeNPS.find(code) != g_codeNPS.end()) {
-        std::string permission = g_codeNPS[code];
-        if (permission.empty()) {
-            return NETMANAGER_SUCCESS;
-        }
         bool result = NetManagerPermission::IsSystemCaller();
         // LCOV_EXCL_START
         if (!result) {
@@ -224,6 +222,17 @@ int32_t NetPolicyServiceStub::CheckPolicyPermission(uint32_t code)
         }
         // LCOV_EXCL_STOP
         result = SubCheckPermission(g_codeNPS[code], code);
+        if (!result) {
+            return NETMANAGER_ERR_PERMISSION_DENIED;
+        }
+        return NETMANAGER_SUCCESS;
+    }
+    if (g_pub_codeNPS.find(code) != g_pub_codeNPS.end()) {
+        std::string permission = g_pub_codeNPS[code];
+        if (permission.empty()) {
+            return NETMANAGER_SUCCESS;
+        }
+        bool result = SubCheckPermission(permission, code);
         if (!result) {
             return NETMANAGER_ERR_PERMISSION_DENIED;
         }
