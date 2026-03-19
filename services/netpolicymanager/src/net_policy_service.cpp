@@ -44,6 +44,7 @@
 #include "os_account_manager.h"
 #include "system_timer.h"
 #include "unique_fd.h"
+#include "ipc_skeleton.h"
 
 #ifdef __LP64__
 const std::string LIB_LOAD_PATH = "/system/lib64/libnet_access_policy_dialog.z.so";
@@ -708,6 +709,7 @@ int32_t NetPolicyService::GetNetworkAccessPolicy(AccessPolicyParameter parameter
 {
     NETMGR_LOG_I("GetNetworkAccessPolicy enter.");
     NetAccessPolicyRDB netAccessPolicy;
+    uint32_t userId = parameter.callingUid / AppExecFwk::Constants::BASE_USER_RANGE;
 
     auto bundleMgrProxy = GetBundleMgrProxy();
     if (bundleMgrProxy == nullptr) {
@@ -735,7 +737,7 @@ int32_t NetPolicyService::GetNetworkAccessPolicy(AccessPolicyParameter parameter
 
     std::vector<AppExecFwk::ApplicationInfo> appInfos;
     bool retC = bundleMgrProxy->GetApplicationInfos(AppExecFwk::ApplicationFlag::GET_APPLICATION_INFO_WITH_PERMISSION,
-                                                    static_cast<uint32_t>(parameter.userId), appInfos);
+                                                    static_cast<uint32_t>(userId), appInfos);
     if (!retC) {
         NETMGR_LOG_E("GetApplicationInfos Error");
         return NETMANAGER_ERR_INTERNAL;
@@ -769,6 +771,29 @@ int32_t NetPolicyService::RemoveNetworkAccessPolicy(const std::vector<std::strin
     NetAccessPolicyConfigUtils::GetInstance().RemoveNetAccessPolicyConfig(bundleNames);
     RefreshNetworkAccessPolicyFromConfig();
     return NETMANAGER_SUCCESS;
+}
+
+int32_t NetPolicyService::GetSelfNetworkAccessPolicy(NetAccessPolicy &policy)
+{
+    uint32_t callingUid = static_cast<uint32_t>(IPCSkeleton::GetCallingUid());
+    
+    AccessPolicyParameter parameter;
+    parameter.flag = true;
+    parameter.uid = callingUid;
+    parameter.callingUid = callingUid;
+    
+    AccessPolicySave policySave;
+    int32_t result = GetNetworkAccessPolicy(parameter, policySave);
+    // LCOV_EXCL_START
+    if (result == NETMANAGER_SUCCESS) {
+        // Convert to NetAccessPolicy
+        policy.allowWiFi = policySave.policy.wifiAllow;
+        policy.allowCellular = policySave.policy.cellularAllow;
+    }
+    NETMGR_LOG_I("GetSelfNetworkAccessPolicy. uid:%{public}d, %{public}d, %{public}d",
+        callingUid, policy.allowWiFi, policy.allowCellular);
+    // LCOV_EXCL_STOP
+    return result;
 }
 
 int32_t NetPolicyService::DeleteNetworkAccessPolicy(uint32_t uid)

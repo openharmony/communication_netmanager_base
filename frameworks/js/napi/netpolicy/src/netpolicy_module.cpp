@@ -37,6 +37,7 @@
 #include "update_remind_policy_context.h"
 #include "set_network_access_policy_context.h"
 #include "get_network_access_policy_context.h"
+#include "get_self_network_access_policy_context.h"
 #include "show_app_net_policy_settings.h"
 
 #define DEFINE_REMIND(REMIND) \
@@ -90,6 +91,7 @@ constexpr const char *NET_LIMIT_ACTION = "LimitAction";
 constexpr const char *NET_BACKGROUND_POLICY = "NetBackgroundPolicy";
 constexpr const char *FUNCTION_SET_NETWORK_ACCESS_POLICY = "setNetworkAccessPolicy";
 constexpr const char *FUNCTION_GET_NETWORK_ACCESS_POLICY = "getNetworkAccessPolicy";
+constexpr const char *FUNCTION_GET_SELF_NETWORK_ACCESS_POLICY = "getNetAccessPolicy";
 constexpr const char *FUNCTION_SHOW_APP_NET_POLICY_SETTINGS = "showAppNetPolicySettings";
 
 enum MeteringMode {
@@ -233,6 +235,13 @@ napi_value GetNetworkAccessPolicy(napi_env env, napi_callback_info info)
         NetPolicyAsyncWork::GetNetworkAccessPolicyCallback);
 }
 
+napi_value GetSelfNetworkAccessPolicy(napi_env env, napi_callback_info info)
+{
+    return ModuleTemplate::Interface<GetSelfNetworkAccessPolicyContext>(
+        env, info, FUNCTION_GET_SELF_NETWORK_ACCESS_POLICY, nullptr, NetPolicyAsyncWork::ExecGetSelfNetworkAccessPolicy,
+        NetPolicyAsyncWork::GetSelfNetworkAccessPolicyCallback);
+}
+
 napi_value On(napi_env env, napi_callback_info info)
 {
     return PolicyObserverWrapper::GetInstance().On(env, info,
@@ -350,6 +359,7 @@ napi_value InitPolicyModule(napi_env env, napi_value exports)
             DECLARE_NAPI_FUNCTION(FUNCTION_GET_POWER_SAVE_ALLOWLIST, GetPowerSaveTrustlist),
             DECLARE_NAPI_FUNCTION(FUNCTION_SET_NETWORK_ACCESS_POLICY, SetNetworkAccessPolicy),
             DECLARE_NAPI_FUNCTION(FUNCTION_GET_NETWORK_ACCESS_POLICY, GetNetworkAccessPolicy),
+            DECLARE_NAPI_FUNCTION(FUNCTION_GET_SELF_NETWORK_ACCESS_POLICY, GetSelfNetworkAccessPolicy),
             DECLARE_NAPI_FUNCTION(FUNCTION_SHOW_APP_NET_POLICY_SETTINGS, ShowAppNetPolicySettings),
             DECLARE_NAPI_FUNCTION(FUNCTION_ON, On),
             DECLARE_NAPI_FUNCTION(FUNCTION_OFF, Off),

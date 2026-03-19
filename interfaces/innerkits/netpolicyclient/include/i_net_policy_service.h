@@ -243,6 +243,14 @@ public:
      */
     virtual int32_t GetNetworkAccessPolicy(AccessPolicyParameter parameter, AccessPolicySave& policy) = 0;
 
+    /**
+     * Query the network access policy of the calling application.
+     *
+     * @param policy The network access policy of application, {@link NetAccessPolicy}.
+     * @return Returns 0 success. Otherwise fail, {@link NetPolicyResultCode}.
+     */
+    virtual int32_t GetSelfNetworkAccessPolicy(NetAccessPolicy& policy) = 0;
+
     virtual int32_t NotifyNetAccessPolicyDiag(uint32_t uid) = 0;
 
     /**
