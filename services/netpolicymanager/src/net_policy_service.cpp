@@ -786,7 +786,6 @@ int32_t NetPolicyService::GetSelfNetworkAccessPolicy(NetAccessPolicy &policy)
     int32_t result = GetNetworkAccessPolicy(parameter, policySave);
     // LCOV_EXCL_START
     if (result == NETMANAGER_SUCCESS) {
-        NETMGR_LOG_I("GetSelfNetworkAccessPolicy 1.");
         // Convert to NetAccessPolicy
         policy.allowWiFi = policySave.policy.wifiAllow;
         policy.allowCellular = policySave.policy.cellularAllow;

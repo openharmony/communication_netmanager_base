@@ -42,10 +42,7 @@ void GetSelfNetworkAccessPolicyContext::ParseParams(napi_value *params, size_t p
 
 bool GetSelfNetworkAccessPolicyContext::CheckParamsType(napi_value *params, size_t paramsCount)
 {
-    if (paramsCount == PARAM_NONE) {
-        return true;
-    }
-    return false;
+    return paramsCount == PARAM_NONE;
 }
 
 } // namespace OHOS::NetManagerStandard
