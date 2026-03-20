@@ -1646,7 +1646,6 @@ void NetStatsService::UpdataSettingsdata(int32_t simId, uint8_t flag, uint64_t v
 int32_t NetStatsService::UpdataSettingsdataFfrt(int32_t simId, uint8_t flag, uint64_t value)
 {
     NETMGR_LOG_I("UpdataSettingsdata. simId: %{public}d, flag: %{public}d, value: %{public}lu", simId, flag, value);
-    std::lock_guard<std::mutex> lock(settingsTrafficMapMutex_);
     auto iter = settingsTrafficMap_.find(simId);
     if (iter == settingsTrafficMap_.end() || iter->second.second == nullptr) {
         NETMGR_LOG_I("iter is nullptr.");
@@ -1748,7 +1747,6 @@ void NetStatsService::UpdateNetStatsToMapFromDB(int32_t simId)
 
 int32_t NetStatsService::NotifyTrafficAlert(int32_t simId, uint8_t flag)
 {
-    std::lock_guard<std::mutex> lock(settingsTrafficMapMutex_);
     if (simIdToIfIndexMap_.find(simId) == simIdToIfIndexMap_.end()) {
         NETMGR_LOG_E("simIdToIfIndexMap not find simId: %{public}d", simId);
         return -1;
@@ -1936,7 +1934,6 @@ void NetStatsService::DealMonAlert(int32_t simId, bool isDualCard)
  
 std::map<int32_t, std::pair<ObserverPtr, SettingsInfoPtr>> NetStatsService::GetSettingsObserverMap()
 {
-    std::lock_guard<std::mutex> lock(settingsTrafficMapMutex_);
     return settingsTrafficMap_;
 }
 
@@ -1963,7 +1960,6 @@ void NetStatsService::UpdateTrafficLimitDate(int32_t simId)
 
 bool NetStatsService::GetMonthlyLimitBySimId(int32_t simId, uint64_t &monthlyLimit)
 {
-    std::lock_guard<std::mutex> lock(settingsTrafficMapMutex_);
     if (settingsTrafficMap_.find(simId) == settingsTrafficMap_.end()) {
         return false;
     }
@@ -1973,7 +1969,6 @@ bool NetStatsService::GetMonthlyLimitBySimId(int32_t simId, uint64_t &monthlyLim
 
 bool NetStatsService::GetMonthlyMarkBySimId(int32_t simId, uint16_t &monthlyMark)
 {
-    std::lock_guard<std::mutex> lock(settingsTrafficMapMutex_);
     if (settingsTrafficMap_.find(simId) == settingsTrafficMap_.end()) {
         return false;
     }
@@ -1983,7 +1978,6 @@ bool NetStatsService::GetMonthlyMarkBySimId(int32_t simId, uint16_t &monthlyMark
 
 bool NetStatsService::GetdailyMarkBySimId(int32_t simId, uint16_t &dailyMark)
 {
-    std::lock_guard<std::mutex> lock(settingsTrafficMapMutex_);
     if (settingsTrafficMap_.find(simId) == settingsTrafficMap_.end()) {
         return false;
     }
