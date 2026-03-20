@@ -1164,7 +1164,12 @@ bool IsIPv6LinkLocal(const std::string& ipv6Addr)
 
 void RemoveDeleteControlFromPath(const char *path)
 {
-    int fd = open(path, O_RDONLY);
+    char realPathBuffer[PATH_MAX];
+    char* realPath = realpath(path, realPathBuffer);
+    if (realPath == nullptr) {
+        return;
+    }
+    int fd = open(realPath, O_RDONLY);
     if (fd > 0) {
         RemoveDeleteControlFlag(fd);
         close(fd);
