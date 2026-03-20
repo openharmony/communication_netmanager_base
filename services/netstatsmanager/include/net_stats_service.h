@@ -190,6 +190,7 @@ private:
     uint64_t curIfIndex_ = UINT64_MAX;
     std::atomic_bool isWifiConnected_ = false;
     std::map<int32_t, std::pair<ObserverPtr, SettingsInfoPtr>> settingsTrafficMap_;
+    std::mutex settingsTrafficMapMutex_;
     std::map<int32_t, uint64_t> simIdToIfIndexMap_;
     std::unique_ptr<FfrtTimer> trafficTimer_ = nullptr;
     sptr<TrafficObserver> trafficObserver_ = nullptr;
