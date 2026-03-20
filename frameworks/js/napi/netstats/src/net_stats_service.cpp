@@ -1690,6 +1690,7 @@ int32_t NetStatsService::UpdataSettingsdataFfrt(int32_t simId, uint8_t flag, uin
         default:
             break;
     }
+    std::lock_guard<std::mutex> lock.unlock();
 
     if (simIdToIfIndexMap_.find(simId) != simIdToIfIndexMap_.end()) {
         UpdateBpfMap(simId);
