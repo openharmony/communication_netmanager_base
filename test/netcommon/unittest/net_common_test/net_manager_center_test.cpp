@@ -158,12 +158,16 @@ public:
         return true;
     }
 
-    void NotifyAllowConnectVpnBundleNameChanged(std::set<std::string> &&allowConnectVpnBundleName) override
+    void NotifyAllowConnectVpnBundleNameChanged(
+        std::set<std::string> &&allowConnectVpnBundleName,
+        std::set<std::string> &&allowVpnStartWithoutCheckPermissions) override
     {
         allowConnectVpnBundleName_ = std::move(allowConnectVpnBundleName);
+        allowVpnStartWithoutCheckPermissions_ = std::move(allowVpnStartWithoutCheckPermissions);
     }
 
     std::set<std::string> allowConnectVpnBundleName_;
+    std::set<std::string> allowVpnStartWithoutCheckPermissions_;
 };
 } // namespace
 
@@ -684,7 +688,9 @@ HWTEST_F(NetManagerCenterTest, NotifyAllowConnectVpnBundleNameChanged0001, TestS
     NetManagerCenter netManagerCenter;
     std::set<std::string> allowConnectVpnBundleName;
     allowConnectVpnBundleName.insert("test");
-    netManagerCenter.NotifyAllowConnectVpnBundleNameChanged(std::move(allowConnectVpnBundleName));
+    std::set<std::string> allowVpnStartWithoutCheckPermissions;
+    netManagerCenter.NotifyAllowConnectVpnBundleNameChanged(std::move(allowConnectVpnBundleName),
+        std::move(allowVpnStartWithoutCheckPermissions));
     EXPECT_EQ(netManagerCenter.vpnService_, nullptr);
     EXPECT_FALSE(allowConnectVpnBundleName.empty());
 }
@@ -696,7 +702,9 @@ HWTEST_F(NetManagerCenterTest, NotifyAllowConnectVpnBundleNameChanged0002, TestS
     netManagerCenter.RegisterVpnService(vpnService);
     std::set<std::string> allowConnectVpnBundleName;
     allowConnectVpnBundleName.insert("test");
-    netManagerCenter.NotifyAllowConnectVpnBundleNameChanged(std::move(allowConnectVpnBundleName));
+    std::set<std::string> allowVpnStartWithoutCheckPermissions;
+    netManagerCenter.NotifyAllowConnectVpnBundleNameChanged(std::move(allowConnectVpnBundleName),
+        std::move(allowVpnStartWithoutCheckPermissions));
     EXPECT_NE(netManagerCenter.vpnService_, nullptr);
     EXPECT_TRUE(allowConnectVpnBundleName.empty());
     EXPECT_FALSE(vpnService->allowConnectVpnBundleName_.empty());
