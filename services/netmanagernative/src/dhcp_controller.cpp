@@ -159,7 +159,7 @@ void DhcpController::Process(const std::string &iface, DhcpResult *result)
     for (auto cb : callback_) {
         if (cb == nullptr) {
             continue;
-        } 
+        }
         cb->OnDhcpSuccess(ptr);
     }
 }
