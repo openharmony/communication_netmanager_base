@@ -26,7 +26,9 @@ public:
     virtual ~NetVpnBaseService() = default;
     virtual bool IsVpnApplication(int32_t uid) = 0;
     virtual bool IsAppUidInWhiteList(int32_t callingUid, int32_t appUid) = 0;
-    virtual void NotifyAllowConnectVpnBundleNameChanged(std::set<std::string> &&allowConnectVpnBundleName) = 0;
+    virtual void NotifyAllowConnectVpnBundleNameChanged(
+        std::set<std::string> &&allowConnectVpnBundleName,
+        std::set<std::string> &&allowVpnStartWithoutCheckPermissions) = 0;
 };
 } // namespace NetManagerStandard
 } // namespace OHOS
