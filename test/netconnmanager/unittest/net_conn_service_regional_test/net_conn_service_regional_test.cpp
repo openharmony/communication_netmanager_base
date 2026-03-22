@@ -193,5 +193,33 @@ HWTEST_F(NetConnServiceRegionalStubTest, NetConnServiceRegionalStubTest016, Test
     auto ret = instance_->OnRegisterNetConnCallback(data, reply);
     EXPECT_EQ(ret, NETMANAGER_ERR_IPC_CONNECT_STUB_FAIL);
 }
+
+HWTEST_F(NetConnServiceRegionalStubTest, OnIsDeadFlowResetTargetBundleTest001, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    auto ret = instance_->OnIsDeadFlowResetTargetBundle(data, reply);
+    EXPECT_EQ(ret, NETMANAGER_ERR_READ_DATA_FAIL);
+}
+
+HWTEST_F(NetConnServiceRegionalStubTest, OnIsDeadFlowResetTargetBundleTest002, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    std::string bundleName = "com.test.bundle";
+    data.WriteString(bundleName);
+    auto ret = instance_->OnIsDeadFlowResetTargetBundle(data, reply);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+}
+
+HWTEST_F(NetConnServiceRegionalStubTest, OnIsDeadFlowResetTargetBundleTest003, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    std::string bundleName = "";
+    data.WriteString(bundleName);
+    auto ret = instance_->OnIsDeadFlowResetTargetBundle(data, reply);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+}
 }
 }

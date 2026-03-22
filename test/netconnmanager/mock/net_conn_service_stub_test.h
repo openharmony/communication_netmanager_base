@@ -461,6 +461,11 @@ public:
     {
         return 0;
     }
+
+    int32_t IsDeadFlowResetTargetBundle(const std::string &bundleName, bool &flag) override
+    {
+        return 0;
+    }
 };
 } // namespace NetManagerStandard
 } // namespace OHOS
