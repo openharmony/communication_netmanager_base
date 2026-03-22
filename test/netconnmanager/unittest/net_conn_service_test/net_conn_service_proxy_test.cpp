@@ -47,6 +47,55 @@ public:
         return 0;
     }
 
+    void HandleGetIfaceNamesReply(MessageParcel &reply)
+    {
+        reply.WriteUint32(NETMANAGER_SUCCESS);
+    }
+
+    void HandleGetIfaceNameByTypeReply(MessageParcel &reply)
+    {
+        reply.WriteString(TEST_HOST);
+    }
+
+    void HandleGetDefaultNetReply(MessageParcel &reply)
+    {
+        reply.WriteInt32(TEST_NETID);
+    }
+
+    void HandleHasDefaultNetReply(MessageParcel &reply)
+    {
+        reply.WriteBool(true);
+    }
+
+    void HandleGetConnectionPropertiesReply(MessageParcel &reply)
+    {
+        NetLinkInfo linkInfo;
+        linkInfo.ifaceName_ = "ifacename_test";
+        linkInfo.Marshalling(reply);
+    }
+
+    void HandleGetNetCapabilitiesReply(MessageParcel &reply)
+    {
+        NetAllCapabilities netCap;
+        netCap.Marshalling(reply);
+    }
+
+    void HandleGetHttpProxyReply(MessageParcel &reply)
+    {
+        HttpProxy httpProxy;
+        httpProxy.Marshalling(reply);
+    }
+
+    void HandleGetConnectOwnerUidReply(MessageParcel &reply)
+    {
+        reply.WriteInt32(TEST_UID);
+    }
+
+    void HandleDeadFlowResetTargetBundleReply(MessageParcel &reply)
+    {
+        reply.WriteBool(true);
+    }
+
     int SendRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override
     {
         reply.WriteInt32(NETMANAGER_SUCCESS);
@@ -56,47 +105,34 @@ public:
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_ALL_NETS):
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_NET_ID_BY_IDENTIFIER):
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_GET_IFACENAME_IDENT_MAPS):
-                reply.WriteUint32(NETMANAGER_SUCCESS);
+                HandleGetIfaceNamesReply(reply);
                 break;
-
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_IFACENAME_BY_TYPE):
-                reply.WriteString(TEST_HOST);
+                HandleGetIfaceNameByTypeReply(reply);
                 break;
-
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GETDEFAULTNETWORK):
-                reply.WriteInt32(TEST_NETID);
+                HandleGetDefaultNetReply(reply);
                 break;
-
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_HASDEFAULTNET):
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_IS_DEFAULT_NET_METERED):
-                reply.WriteBool(true);
+                HandleHasDefaultNetReply(reply);
                 break;
-
-            case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_CONNECTION_PROPERTIES): {
-                NetLinkInfo linkInfo;
-                linkInfo.ifaceName_ = "ifacename_test";
-                linkInfo.Marshalling(reply);
+            case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_CONNECTION_PROPERTIES):
+                HandleGetConnectionPropertiesReply(reply);
                 break;
-            }
-
-            case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_NET_CAPABILITIES): {
-                NetAllCapabilities netCap;
-                netCap.Marshalling(reply);
+            case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_NET_CAPABILITIES):
+                HandleGetNetCapabilitiesReply(reply);
                 break;
-            }
-
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_GLOBAL_HTTP_PROXY):
-            case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_DEFAULT_HTTP_PROXY): {
-                HttpProxy httpProxy;
-                httpProxy.Marshalling(reply);
+            case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_DEFAULT_HTTP_PROXY):
+                HandleGetHttpProxyReply(reply);
                 break;
-            }
-
-            case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_CONNECT_OWNER_UID): {
-                reply.WriteInt32(TEST_UID);
+            case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_CONNECT_OWNER_UID):
+                HandleGetConnectOwnerUidReply(reply);
                 break;
-            }
-
+            case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_DEAD_FLOW_RESET_TARGET_BUNDLE):
+                HandleDeadFlowResetTargetBundleReply(reply);
+                break;
             default:
                 reply.WriteUint32(TEST_SUPPLIERID);
                 break;
@@ -825,6 +861,23 @@ HWTEST_F(NetConnServiceProxyTest, GetSystemNetPortStatesTest001, TestSize.Level1
     NetPortStatesInfo netPortStatesInfo;
     int32_t ret = instance_->GetSystemNetPortStates(netPortStatesInfo);
     EXPECT_TRUE(ret == NETMANAGER_SUCCESS || ret == NETMANAGER_ERR_READ_REPLY_FAIL);
+}
+
+HWTEST_F(NetConnServiceProxyTest, IsDeadFlowResetTargetBundleTest001, TestSize.Level1)
+{
+    std::string bundleName = "com.test.bundle";
+    bool flag = false;
+    int32_t ret = instance_->IsDeadFlowResetTargetBundle(bundleName, flag);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+    EXPECT_TRUE(flag);
+}
+
+HWTEST_F(NetConnServiceProxyTest, IsDeadFlowResetTargetBundleTest002, TestSize.Level1)
+{
+    std::string bundleName = "";
+    bool flag = false;
+    int32_t ret = instance_->IsDeadFlowResetTargetBundle(bundleName, flag);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
 }
 }
 } // namespace NetManagerStandard

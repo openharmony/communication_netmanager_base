@@ -256,6 +256,8 @@ void NetConnServiceStub::InitQueryFuncToInterfaceMapExt()
         &NetConnServiceStub::OnDeleteVlanIp, {Permission::CONNECTIVITY_INTERNAL}};
     memberFuncMap_[static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_CONNECT_OWNER_UID)] = {
         &NetConnServiceStub::OnGetConnectOwnerUid, {Permission::GET_NETWORK_INFO}};
+    memberFuncMap_[static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_DEAD_FLOW_RESET_TARGET_BUNDLE)] = {
+        &NetConnServiceStub::OnIsDeadFlowResetTargetBundle, {}};
 }
 
 void NetConnServiceStub::InitVnicFuncToInterfaceMap()
@@ -2329,5 +2331,23 @@ int32_t NetConnServiceStub::OnGetSystemNetPortStates(MessageParcel &data, Messag
     return NETMANAGER_SUCCESS;
 }
 
+int32_t NetConnServiceStub::OnIsDeadFlowResetTargetBundle(MessageParcel &data, MessageParcel &reply)
+{
+    std::string bundleName;
+    if (!data.ReadString(bundleName)) {
+        return NETMANAGER_ERR_READ_DATA_FAIL;
+    }
+    bool flag = false;
+    int32_t result = IsDeadFlowResetTargetBundle(bundleName, flag);
+    if (!reply.WriteInt32(result)) {
+        return NETMANAGER_ERR_WRITE_REPLY_FAIL;
+    }
+    if (result == NETMANAGER_SUCCESS) {
+        if (!reply.WriteBool(flag)) {
+            return NETMANAGER_ERR_WRITE_REPLY_FAIL;
+        }
+    }
+    return NETMANAGER_SUCCESS;
+}
 } // namespace NetManagerStandard
 } // namespace OHOS
