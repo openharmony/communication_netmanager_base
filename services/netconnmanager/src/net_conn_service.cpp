@@ -2345,7 +2345,7 @@ int32_t NetConnService::GetDefaultHttpProxy(int32_t bindNetId, HttpProxy &httpPr
     }
 
     auto network = FindNetwork(bindNetId);
-    if (network != nullptr) {
+    if (network != nullptr && network->IsConnected()) {
         httpProxy = network->GetHttpProxy();
         NETMGR_LOG_I("Return bound network's http proxy as default.");
         return NETMANAGER_SUCCESS;
