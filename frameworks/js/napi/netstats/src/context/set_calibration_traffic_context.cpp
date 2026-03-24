@@ -38,21 +38,9 @@ void SetCalibrationTrafficContext::ParseParams(napi_value *params, size_t params
     }
 
     simId_ = NapiUtils::GetUint32FromValue(GetEnv(), params[ARG_INDEX_0]);
-    int64_t remainDataTmp = NapiUtils::GetInt64FromValue(GetEnv(), params[ARG_INDEX_1]);
-    if (remainDataTmp < 0) {
-        NETMANAGER_BASE_LOGE("remainingData_ < 0, err");
-        SetErrorCode(NETMANAGER_ERR_INVALID_PARAMETER);
-        SetNeedThrowException(true);
-        return;
-    }
-    remainingData_ = static_cast<uint64_t>(remainDataTmp);
-    NETMANAGER_BASE_LOGE("get remainingData_: %{public}" PRIu64, remainingData_);
-    if (remainingData_ == UINT64_MAX) {
-        NETMANAGER_BASE_LOGE("get remainingData_ false");
-        SetErrorCode(NETMANAGER_ERR_INVALID_PARAMETER);
-        SetNeedThrowException(true);
-        return;
-    }
+    remainingData_ = NapiUtils::GetInt64FromValue(GetEnv(), params[ARG_INDEX_1]);
+    NETMANAGER_BASE_LOGD("get remainingData_ %{public}" PRId64, remainingData_);
+
     if (paramsCount == PARAM_TRIPLE_OPTIONS) {
         int64_t totalDataTmp = NapiUtils::GetInt64FromValue(GetEnv(), params[ARG_INDEX_2]);
         if (totalDataTmp < 0) {
@@ -62,7 +50,7 @@ void SetCalibrationTrafficContext::ParseParams(napi_value *params, size_t params
             return;
         }
         totalMonthlyData_ = static_cast<uint64_t>(totalDataTmp);
-        NETMANAGER_BASE_LOGE("get totalMonthlyData_: %{public}" PRIu64, totalMonthlyData_);
+        NETMANAGER_BASE_LOGD("get totalMonthlyData_: %{public}" PRIu64, totalMonthlyData_);
         if (totalMonthlyData_ == UINT64_MAX) {
             NETMANAGER_BASE_LOGE("get totalMonthlyData_ false");
             SetErrorCode(NETMANAGER_ERR_INVALID_PARAMETER);
@@ -92,7 +80,7 @@ uint64_t SetCalibrationTrafficContext::GetTotalMonthlyData() const
     return totalMonthlyData_;
 }
 
-uint64_t SetCalibrationTrafficContext::GetRemainingData() const
+int64_t SetCalibrationTrafficContext::GetRemainingData() const
 {
     return remainingData_;
 }

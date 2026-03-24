@@ -81,7 +81,7 @@ public:
     int32_t GetTrafficStatsByUidNetwork(std::vector<NetStatsInfoSequence> &infos, uint32_t uid,
                                         const NetStatsNetwork &networkIpc) override;
     int32_t GetMonthTrafficStatsByNetwork(uint32_t simId, uint64_t &monthDataIpc) override;
-    int32_t SetCalibrationTraffic(uint32_t simId, uint64_t remainingData, uint64_t totalMonthlyData) override;
+    int32_t SetCalibrationTraffic(uint32_t simId, int64_t remainingData, uint64_t totalMonthlyData) override;
     int32_t SetAppStats(const PushStatsInfo &info) override;
     int32_t RegisterNetStatsCallback(const sptr<INetStatsCallback> &callback) override;
     int32_t UnregisterNetStatsCallback(const sptr<INetStatsCallback> &callback) override;

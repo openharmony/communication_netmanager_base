@@ -623,7 +623,7 @@ int32_t NetStatsServiceProxy::GetCookieTxBytes(uint64_t &stats, uint64_t cookie)
     return error;
 }
 
-int32_t NetStatsServiceProxy::SetCalibrationTraffic(uint32_t simId, uint64_t remainingData, uint64_t totalMonthlyData)
+int32_t NetStatsServiceProxy::SetCalibrationTraffic(uint32_t simId, int64_t remainingData, uint64_t totalMonthlyData)
 {
     MessageParcel data;
     if (!WriteInterfaceToken(data)) {
@@ -635,7 +635,7 @@ int32_t NetStatsServiceProxy::SetCalibrationTraffic(uint32_t simId, uint64_t rem
         NETMGR_LOG_E("proxy simId write failed.");
         return NETMANAGER_ERR_WRITE_DATA_FAIL;
     }
-    if (!data.WriteUint64(remainingData)) {
+    if (!data.WriteInt64(remainingData)) {
         NETMGR_LOG_E("proxy remainingData write failed.");
         return NETMANAGER_ERR_WRITE_DATA_FAIL;
     }
