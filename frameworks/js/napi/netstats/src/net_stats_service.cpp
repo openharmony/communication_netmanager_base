@@ -1720,7 +1720,7 @@ int32_t TrafficObserver::OnExceedTrafficLimits(int8_t &flag)
         return -1;
     }
 
-    DelayedSingleton<NetStatsService>::GetInstance()->NotifyTrafficAlert(simId, trafficFlag);
+    DelayedSingleton<NetStatsService>::GetInstance()->NotifyTrafficAlertFfrt(simId, trafficFlag);
     return 0;
 }
 
@@ -1757,6 +1757,21 @@ int32_t NetStatsService::NotifyTrafficAlert(int32_t simId, uint8_t flag)
         NETMGR_LOG_I("There is no need to pop up trafficLimit notification.");
     }
     return NETMANAGER_SUCCESS;
+}
+
+int32_t NetStatsService::NotifyTrafficAlertFfrt(int32_t simId, uint8_t flag)
+{
+#ifndef UNITTEST_FORBID_FFRT
+    if (!trafficPlanFfrtQueue_) {
+        return NETMANAGER_ERR_INTERNAL;
+    }
+    trafficPlanFfrtQueue_->submit([this, simId, flag]() {
+#endif
+        NotifyTrafficAlert(simId, flag);
+#ifndef UNITTEST_FORBID_FFRT
+    });
+    return NETMANAGER_SUCCESS;
+#endif
 }
 
 bool NetStatsService::GetNotifyStats(int32_t simId, uint8_t flag)
