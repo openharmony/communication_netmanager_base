@@ -1380,7 +1380,6 @@ int32_t NetStatsService::SetCalibrationTraffic(uint32_t simId, int64_t remaining
         return NETMANAGER_ERR_INVALID_PARAMETER;
     }
     if (remainingData > static_cast<int64_t>(totalMonthlyData)) {
-        NETMGR_LOG_E("remainingData > totalMonthlyData");
         return NETMANAGER_ERR_INVALID_PARAMETER;
     }
     // 1、触发网卡cache
