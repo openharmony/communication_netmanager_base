@@ -436,7 +436,7 @@ HWTEST_F(NetStatsClientTest, GetMonthTrafficStatsByNetworkTest001, TestSize.Leve
 HWTEST_F(NetStatsClientTest, NetStatsClient010, TestSize.Level1)
 {
     uint32_t simId = 1;
-    uint64_t remainingData = 100 * 1024 * 1024;
+    int64_t remainingData = 100 * 1024 * 1024;
     uint64_t totalMonthlyData = 1000 * 1024 * 1024;
     int32_t ret = DelayedSingleton<NetStatsClient>::GetInstance()->SetCalibrationTraffic(
         simId, remainingData, totalMonthlyData);

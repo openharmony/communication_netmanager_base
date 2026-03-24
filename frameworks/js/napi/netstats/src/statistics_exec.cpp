@@ -205,7 +205,7 @@ bool StatisticsExec::ExecSetCalibrationTraffic(SetCalibrationTrafficContext *con
         return false;
     }
     uint32_t simId = context->GetSimId();
-    uint64_t remainingData = context->GetRemainingData();
+    int64_t remainingData = context->GetRemainingData();
     uint64_t totalMonthlyData = context->GetTotalMonthlyData();
     int32_t result = NetStatsClient::GetInstance().SetCalibrationTraffic(simId, remainingData, totalMonthlyData);
     context->SetErrorCode(result);

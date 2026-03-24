@@ -451,7 +451,7 @@ int32_t NetStatsClient::GetSockfdTxBytes(uint64_t &stats, int32_t sockfd)
     return proxy->GetCookieTxBytes(stats, optrval);
 }
 
-int32_t NetStatsClient::SetCalibrationTraffic(uint32_t simId, uint64_t remainingData, uint64_t totalMonthlyData)
+int32_t NetStatsClient::SetCalibrationTraffic(uint32_t simId, int64_t remainingData, uint64_t totalMonthlyData)
 {
     sptr<INetStatsService> proxy = GetProxy();
     // LCOV_EXCL_START

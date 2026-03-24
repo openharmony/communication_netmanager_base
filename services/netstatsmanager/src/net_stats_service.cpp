@@ -1365,9 +1365,9 @@ void NetStatsService::StartAccountObserver()
     NETMGR_LOG_I("StartAccountObserver end");
 }
 
-int32_t NetStatsService::SetCalibrationTraffic(uint32_t simId, uint64_t remainingData, uint64_t totalMonthlyData)
+int32_t NetStatsService::SetCalibrationTraffic(uint32_t simId, int64_t remainingData, uint64_t totalMonthlyData)
 {
-    NETMGR_LOG_I("SetCalibrationTraffic. simId:%{public}d, remainingData:%{public}" PRIu64 "\
+    NETMGR_LOG_I("SetCalibrationTraffic. simId:%{public}d, remainingData:%{public}" PRId64 "\
 , totalMonthlyData:%{public}" PRIu64, simId, remainingData, totalMonthlyData);
 #ifdef SUPPORT_TRAFFIC_STATISTIC
     int32_t checkPermission = CheckNetManagerAvailable();
@@ -1379,7 +1379,8 @@ int32_t NetStatsService::SetCalibrationTraffic(uint32_t simId, uint64_t remainin
         NETMGR_LOG_E("simId:%{public}d, error", simId);
         return NETMANAGER_ERR_INVALID_PARAMETER;
     }
-    if (remainingData > totalMonthlyData) {
+    if (remainingData > static_cast<int64_t>(totalMonthlyData)) {
+        NETMGR_LOG_E("remainingData > totalMonthlyData");
         return NETMANAGER_ERR_INVALID_PARAMETER;
     }
     // 1、触发网卡cache
@@ -1402,7 +1403,7 @@ int32_t NetStatsService::SetCalibrationTraffic(uint32_t simId, uint64_t remainin
         }
         if (totalMonthlyData == UINT64_MAX && settingsTrafficMap_.find(simId) != settingsTrafficMap_.end()) {
             uint64_t usedTraffic = settingsTrafficMap_[simId].second->monthlyLimit - remainingData;
-            if (settingsTrafficMap_[simId].second->monthlyLimit < remainingData) {
+            if (remainingData > 0 && settingsTrafficMap_[simId].second->monthlyLimit < remainingData) {
                 usedTraffic = 0;
             }
             netStatsCalibrate_->UpdateCalibrationInfo(simId, usedTraffic);
