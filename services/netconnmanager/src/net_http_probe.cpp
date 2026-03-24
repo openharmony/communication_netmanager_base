@@ -721,7 +721,11 @@ int32_t NetHttpProbe::CheckSuccessRespCode(int32_t respCode)
     }
     std::string requestId = GetHeaderField(xReqId_);
     // LCOV_EXCL_START
-    if (xReqIdLen_ != -1 && (requestId.empty() || xReqIdLen_ != static_cast<int8_t>(requestId.length()))) {
+    if (xReqIdLen_ == -1) {
+        NETMGR_LOG_I("xReqIdLen: %{public}d", xReqIdLen_);
+        return result;
+    }
+    if (requestId.empty() || xReqIdLen_ != static_cast<int8_t>(requestId.length())) {
         NETMGR_LOG_I("http return 204, but request id error and unreachable! xReqIdLen:%{public}d, rlen: %{public}lu",
             xReqIdLen_, requestId.length());
         result = FAIL_CODE;
