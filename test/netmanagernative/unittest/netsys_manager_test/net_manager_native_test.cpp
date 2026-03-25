@@ -370,5 +370,228 @@ HWTEST_F(NetManagerNativeTest, GetSystemNetPortStatesTest001, TestSize.Level1)
     EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_ERR_LOCAL_PTR_NULL);
 }
 
+HWTEST_F(NetManagerNativeTest, MptcpManagerInitTest001, TestSize.Level1)
+{
+    EXPECT_NE(instance_->mptcpManager_, nullptr);
+}
+
+HWTEST_F(NetManagerNativeTest, MptcpFfrtQueueInitTest001, TestSize.Level1)
+{
+    EXPECT_NE(instance_->mptcpFfrtQueue_, nullptr);
+}
+
+HWTEST_F(NetManagerNativeTest, AddInterfaceAddressWithMptcpTest001, TestSize.Level1)
+{
+    std::string ifName = "wlan0";
+    std::string addrString = "192.168.1.100";
+    int32_t prefixLength = 24;
+    auto ret = instance_->AddInterfaceAddress(ifName, addrString, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+}
+
+HWTEST_F(NetManagerNativeTest, AddInterfaceAddressWithMptcpTest002, TestSize.Level1)
+{
+    std::string ifName = "rmnet0";
+    std::string addrString = "10.0.0.1";
+    int32_t prefixLength = 24;
+    auto ret = instance_->AddInterfaceAddress(ifName, addrString, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+}
+
+HWTEST_F(NetManagerNativeTest, AddInterfaceAddressWithMptcpTest003, TestSize.Level1)
+{
+    std::string ifName = "rmnet1";
+    std::string addrString = "2001:db8::1";
+    int32_t prefixLength = 64;
+    auto ret = instance_->AddInterfaceAddress(ifName, addrString, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+}
+
+HWTEST_F(NetManagerNativeTest, AddInterfaceAddressNonMonitoredTest001, TestSize.Level1)
+{
+    std::string ifName = "eth0";
+    std::string addrString = "192.168.2.100";
+    int32_t prefixLength = 24;
+    auto ret = instance_->AddInterfaceAddress(ifName, addrString, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+}
+
+HWTEST_F(NetManagerNativeTest, AddInterfaceAddressNonMonitoredTest002, TestSize.Level1)
+{
+    std::string ifName = "lo";
+    std::string addrString = "127.0.0.1";
+    int32_t prefixLength = 8;
+    auto ret = instance_->AddInterfaceAddress(ifName, addrString, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+}
+
+HWTEST_F(NetManagerNativeTest, DelInterfaceAddressWithMptcpTest001, TestSize.Level1)
+{
+    std::string ifName = "wlan0";
+    std::string addrString = "192.168.1.100";
+    int32_t prefixLength = 24;
+    auto ret = instance_->DelInterfaceAddress(ifName, addrString, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+}
+
+HWTEST_F(NetManagerNativeTest, DelInterfaceAddressWithMptcpTest002, TestSize.Level1)
+{
+    std::string ifName = "rmnet0";
+    std::string addrString = "10.0.0.1";
+    int32_t prefixLength = 24;
+    auto ret = instance_->DelInterfaceAddress(ifName, addrString, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+}
+
+HWTEST_F(NetManagerNativeTest, DelInterfaceAddressWithMptcpTest003, TestSize.Level1)
+{
+    std::string ifName = "rmnet1";
+    std::string addrString = "2001:db8::1";
+    int32_t prefixLength = 64;
+    auto ret = instance_->DelInterfaceAddress(ifName, addrString, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+}
+
+HWTEST_F(NetManagerNativeTest, DelInterfaceAddressNonMonitoredTest001, TestSize.Level1)
+{
+    std::string ifName = "eth0";
+    std::string addrString = "192.168.2.100";
+    int32_t prefixLength = 24;
+    auto ret = instance_->DelInterfaceAddress(ifName, addrString, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+}
+
+HWTEST_F(NetManagerNativeTest, MptcpManagerNullptrTest001, TestSize.Level1)
+{
+    auto originalMptcpManager = instance_->mptcpManager_;
+    auto originalFfrtQueue = instance_->mptcpFfrtQueue_;
+    
+    instance_->mptcpManager_ = nullptr;
+    std::string ifName = "wlan0";
+    std::string addrString = "192.168.1.100";
+    int32_t prefixLength = 24;
+    auto ret = instance_->AddInterfaceAddress(ifName, addrString, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+    
+    instance_->mptcpManager_ = originalMptcpManager;
+    instance_->mptcpFfrtQueue_ = originalFfrtQueue;
+}
+
+HWTEST_F(NetManagerNativeTest, MptcpFfrtQueueNullptrTest001, TestSize.Level1)
+{
+    auto originalFfrtQueue = instance_->mptcpFfrtQueue_;
+    
+    instance_->mptcpFfrtQueue_ = nullptr;
+    std::string ifName = "wlan0";
+    std::string addrString = "192.168.1.101";
+    int32_t prefixLength = 24;
+    auto ret = instance_->AddInterfaceAddress(ifName, addrString, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+    
+    instance_->mptcpFfrtQueue_ = originalFfrtQueue;
+}
+
+HWTEST_F(NetManagerNativeTest, MptcpManagerNullptrDelTest001, TestSize.Level1)
+{
+    auto originalMptcpManager = instance_->mptcpManager_;
+    
+    instance_->mptcpManager_ = nullptr;
+    std::string ifName = "wlan0";
+    std::string addrString = "192.168.1.100";
+    int32_t prefixLength = 24;
+    auto ret = instance_->DelInterfaceAddress(ifName, addrString, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+    
+    instance_->mptcpManager_ = originalMptcpManager;
+}
+
+HWTEST_F(NetManagerNativeTest, MptcpFfrtQueueNullptrDelTest001, TestSize.Level1)
+{
+    auto originalFfrtQueue = instance_->mptcpFfrtQueue_;
+    
+    instance_->mptcpFfrtQueue_ = nullptr;
+    std::string ifName = "wlan0";
+    std::string addrString = "192.168.1.102";
+    int32_t prefixLength = 24;
+    auto ret = instance_->DelInterfaceAddress(ifName, addrString, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+    
+    instance_->mptcpFfrtQueue_ = originalFfrtQueue;
+}
+
+HWTEST_F(NetManagerNativeTest, AddDelInterfaceAddressSequenceTest001, TestSize.Level1)
+{
+    std::string ifName = "wlan0";
+    std::string addrString = "192.168.1.200";
+    int32_t prefixLength = 24;
+    
+    auto ret = instance_->AddInterfaceAddress(ifName, addrString, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+    
+    ret = instance_->DelInterfaceAddress(ifName, addrString, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+}
+
+HWTEST_F(NetManagerNativeTest, AddDelInterfaceAddressSequenceTest002, TestSize.Level1)
+{
+    std::string ifName1 = "wlan0";
+    std::string addrString1 = "192.168.1.201";
+    std::string ifName2 = "rmnet0";
+    std::string addrString2 = "10.0.0.100";
+    int32_t prefixLength = 24;
+    
+    auto ret = instance_->AddInterfaceAddress(ifName1, addrString1, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+    
+    ret = instance_->AddInterfaceAddress(ifName2, addrString2, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+    
+    ret = instance_->DelInterfaceAddress(ifName1, addrString1, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+    
+    ret = instance_->DelInterfaceAddress(ifName2, addrString2, prefixLength);
+    EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+}
+
+HWTEST_F(NetManagerNativeTest, MultipleAddInterfaceAddressTest001, TestSize.Level1)
+{
+    std::string ifName = "wlan0";
+    int32_t prefixLength = 24;
+    
+    for (int i = 0; i < 5; i++) {
+        std::string addrString = "192.168.1." + std::to_string(50 + i);
+        auto ret = instance_->AddInterfaceAddress(ifName, addrString, prefixLength);
+        EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+    }
+}
+
+HWTEST_F(NetManagerNativeTest, InterfaceManagerNullptrAddAddressTest001, TestSize.Level1)
+{
+    auto originalInterfaceManager = instance_->interfaceManager_;
+    
+    instance_->interfaceManager_ = nullptr;
+    std::string ifName = "wlan0";
+    std::string addrString = "192.168.1.100";
+    int32_t prefixLength = 24;
+    auto ret = instance_->AddInterfaceAddress(ifName, addrString, prefixLength);
+    EXPECT_NE(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+    
+    instance_->interfaceManager_ = originalInterfaceManager;
+}
+
+HWTEST_F(NetManagerNativeTest, InterfaceManagerNullptrDelAddressTest001, TestSize.Level1)
+{
+    auto originalInterfaceManager = instance_->interfaceManager_;
+    
+    instance_->interfaceManager_ = nullptr;
+    std::string ifName = "wlan0";
+    std::string addrString = "192.168.1.100";
+    int32_t prefixLength = 24;
+    auto ret = instance_->DelInterfaceAddress(ifName, addrString, prefixLength);
+    EXPECT_NE(ret, NetManagerStandard::NETMANAGER_SUCCESS);
+    
+    instance_->interfaceManager_ = originalInterfaceManager;
+}
+
 } // namespace nmd
 } // namespace OHOS
