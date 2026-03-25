@@ -16,6 +16,7 @@
 #include <net/if.h>
 
 #include "interface_manager.h"
+#include "mptcp_manager.h"
 #include "net_manager_constants.h"
 #include "net_manager_native.h"
 #include "netmanager_base_common_utils.h"
@@ -52,7 +53,9 @@ NetManagerNative::NetManagerNative()
       routeManager_(std::make_shared<RouteManager>()),
       interfaceManager_(std::make_shared<InterfaceManager>()),
       sharingManager_(std::make_shared<SharingManager>()),
-      dnsManager_(std::make_shared<DnsManager>())
+      dnsManager_(std::make_shared<DnsManager>()),
+      mptcpManager_(std::make_shared<MptcpManager>()),
+      mptcpFfrtQueue_(std::make_shared<ffrt::queue>("MptcpManager"))
 {
 }
 
@@ -169,6 +172,14 @@ int32_t NetManagerNative::AddInterfaceAddress(std::string ifName, std::string ad
     }
 #endif // SUPPORT_SYSVPN
     if (strncmp(ifName.c_str(), TUN_CARD_NAME, strlen(TUN_CARD_NAME)) != 0) {
+        auto mptcpManager = mptcpManager_;
+        std::string addr = addrString;
+        std::string iface = ifName;
+        if (mptcpFfrtQueue_ != nullptr && mptcpManager != nullptr) {
+            mptcpFfrtQueue_->submit([mptcpManager, addr, iface]() {
+                mptcpManager->OnInterfaceAddressUpdated(addr, iface);
+            });
+        }
         return interfaceManager_->AddAddress(ifName.c_str(), addrString.c_str(), prefixLength);
     }
     return VpnManager::GetInstance().SetVpnAddress(ifName, addrString, prefixLength);
@@ -176,6 +187,14 @@ int32_t NetManagerNative::AddInterfaceAddress(std::string ifName, std::string ad
 
 int32_t NetManagerNative::DelInterfaceAddress(std::string ifName, std::string addrString, int32_t prefixLength)
 {
+    auto mptcpManager = mptcpManager_;
+    std::string addr = addrString;
+    std::string iface = ifName;
+    if (mptcpFfrtQueue_ != nullptr && mptcpManager != nullptr) {
+        mptcpFfrtQueue_->submit([mptcpManager, addr, iface]() {
+            mptcpManager->OnInterfaceAddressRemoved(addr, iface);
+        });
+    }
     return interfaceManager_->DelAddress(ifName.c_str(), addrString.c_str(), prefixLength);
 }
 
