@@ -1379,7 +1379,7 @@ int32_t NetStatsService::SetCalibrationTraffic(uint32_t simId, int64_t remaining
         NETMGR_LOG_E("simId:%{public}d, error", simId);
         return NETMANAGER_ERR_INVALID_PARAMETER;
     }
-    if (remainingData > static_cast<int64_t>(totalMonthlyData)) {
+    if (remainingData > 0 && static_cast<uint64_t>(remainingData) > totalMonthlyData) {
         return NETMANAGER_ERR_INVALID_PARAMETER;
     }
     // 1、触发网卡cache
@@ -1402,7 +1402,8 @@ int32_t NetStatsService::SetCalibrationTraffic(uint32_t simId, int64_t remaining
         }
         if (totalMonthlyData == UINT64_MAX && settingsTrafficMap_.find(simId) != settingsTrafficMap_.end()) {
             uint64_t usedTraffic = settingsTrafficMap_[simId].second->monthlyLimit - remainingData;
-            if (remainingData > 0 && settingsTrafficMap_[simId].second->monthlyLimit < remainingData) {
+            if (remainingData > 0 &&
+                settingsTrafficMap_[simId].second->monthlyLimit < static_cast<uint64_t>(remainingData)) {
                 usedTraffic = 0;
             }
             netStatsCalibrate_->UpdateCalibrationInfo(simId, usedTraffic);
