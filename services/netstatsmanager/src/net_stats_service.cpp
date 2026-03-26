@@ -1376,7 +1376,6 @@ int32_t NetStatsService::SetCalibrationTraffic(uint32_t simId, int64_t remaining
     }
     int32_t slotId = Telephony::CoreServiceClient::GetInstance().GetSlotId(simId);
     if (slotId != SLOT_0 && slotId != SLOT_1) {
-        NETMGR_LOG_E("simId:%{public}d, error", simId);
         return NETMANAGER_ERR_INVALID_PARAMETER;
     }
     if (remainingData > 0 && static_cast<uint64_t>(remainingData) > totalMonthlyData) {
