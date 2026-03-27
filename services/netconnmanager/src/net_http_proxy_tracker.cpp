@@ -29,6 +29,23 @@ constexpr const char *EXCLUSIONS_SPLIT_SYMBOL = ",";
 constexpr const char *DEFAULT_HTTP_PROXY_HOST = "NONE";
 constexpr const char *DEFAULT_HTTP_PROXY_PORT = "0";
 constexpr const char *DEFAULT_HTTP_PROXY_EXCLUSION_LIST = "NONE";
+constexpr const char *USER_PROXY_HOST_URI =
+    "datashare:///com.ohos.settingsdata/entry/settingsdata/"
+    "USER_SETTINGSDATA_##USERID##?Proxy=true&key=global_proxy_host";
+constexpr const char *USER_PROXY_PORT_URI =
+    "datashare:///com.ohos.settingsdata/entry/settingsdata/"
+    "USER_SETTINGSDATA_##USERID##?Proxy=true&key=global_proxy_port";
+constexpr const char *USER_PROXY_EXCLUSIONS_URI =
+    "datashare:///com.ohos.settingsdata/entry/settingsdata/"
+    "USER_SETTINGSDATA_##USERID##?Proxy=true&key=global_proxy_exclusions";
+constexpr const char *USER_URI_PATTERN = "##USERID##";
+constexpr const char *GLOBAL_PROXY_PORT_URI =
+    "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true&key=global_proxy_port";
+constexpr const char *GLOBAL_PROXY_EXCLUSIONS_URI =
+    "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true&key=global_proxy_exclusions";
+constexpr const char *KEY_GLOBAL_PROXY_HOST = "settings.netmanager.proxy_host";
+constexpr const char *KEY_GLOBAL_PROXY_PORT = "settings.netmanager.proxy_port";
+constexpr const char *KEY_GLOBAL_PROXY_EXCLUSIONS = "settings.netmanager.proxy_exclusions";
 } // namespace
 
 void NetHttpProxyTracker::ReadFromSettingsData(HttpProxy &httpProxy)

@@ -50,6 +50,8 @@
 #include "parameter.h"
 #include "parameters.h"
 #include "net_datashare_utils_iface.h"
+#include "iservice_registry.h"
+#include "datashare_helper.h"
 
 namespace OHOS {
 namespace NetManagerStandard {
@@ -94,6 +96,14 @@ constexpr const char *SETTINGS_DATASHARE_URI_HTTP =
 constexpr int32_t INVALID_UID = -1;
 constexpr int32_t ERRNO_EADDRNOTAVAIL = -99;
 constexpr int32_t CURRENT_CELLULAR_FORMAT_LENGTH = 10;
+constexpr const char *AIRPLANE_MODE_URI =
+    "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true&key=airplane_mode";
+constexpr const char *KEY_AIRPLANE_MODE = "settings.telephony.airplanemode";
+constexpr const char *PAC_URL_URI =
+    "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true&key=pac_url";
+constexpr const char *KEY_PAC_FILE_URL = "settings.netmanager.pac_file_url";
+constexpr const char *KEY_PROXY_MODE = "settings.netmanager.proxy_mode";
+constexpr const char *KEY_PAC_URL = "settings.netmanager.pac_url";
 } // namespace
 
 const bool REGISTER_LOCAL_RESULT =
