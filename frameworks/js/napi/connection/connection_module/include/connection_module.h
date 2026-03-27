@@ -60,6 +60,7 @@ public:
     static constexpr const char *INTERFACE_NET_CONNECTION = "NetConnection";
     static constexpr const char *INTERFACE_NET_CAP = "NetCap";
     static constexpr const char *INTERFACE_NET_BEAR_TYPE = "NetBearType";
+    static constexpr const char *INTERFACE_TCP_STATE = "TcpState";
     static constexpr const char *INTERFACE_PROXY_MODE_TYPE = "ProxyMode";
     static constexpr const char *INTERFACE_CONVERSION_PROCESS = "ConversionProcess";
     static constexpr const char *FUNCTION_FACTORY_RESET_NETWORK = "factoryReset";
@@ -129,6 +130,7 @@ public:
 private:
     static void InitClasses(napi_env env, napi_value exports);
     static void InitProperties(napi_env env, napi_value exports);
+    static void InitTcpStates(napi_env env, napi_value exports);
     static void InitProtocolTypeProperties(napi_env env, napi_value exports);
     static void InitFamilyTypes(napi_env env, napi_value exports);
 
