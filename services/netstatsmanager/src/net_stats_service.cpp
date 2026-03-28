@@ -67,6 +67,7 @@
 #include "net_stats_subscriber.h"
 #include "ipc_skeleton.h"
 #include "net_conn_client.h"
+#include "cJSON.h"
 
 namespace OHOS {
 namespace NetManagerStandard {
@@ -103,6 +104,31 @@ enum NetStatusConn : uint8_t {
 static constexpr uint32_t TELEPHONY_EVENT_MASK =
     Telephony::TelephonyObserverBroker::OBSERVER_MASK_SIM_STATE;
 #endif // SUPPORT_TRAFFIC_STATISTIC
+constexpr const int32_t NET_STATS_REPORT_DELAY = 2 * 60 * 1000 * 1000;  // 2h
+constexpr const int32_t HIVIEW_UID = 1201;
+constexpr const char *NET_STATS_CALLED_EVENT = "custom.event.NET_STATS_CALLED";
+constexpr const char *NET_STATS_CALL_INFO_KEY = "NET_STATS_CALL_INFO";
+sptr<AppExecFwk::IBundleMgr> GetBundleMgrProxy()
+{
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (!systemAbilityManager) {
+        NETMGR_LOG_E("fail to get system ability mgr.");
+        return nullptr;
+    }
+
+    auto remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (!remoteObject) {
+        NETMGR_LOG_E("fail to get bundle manager proxy.");
+        return nullptr;
+    }
+
+    sptr<AppExecFwk::IBundleMgr> iBundleMgr = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    if (iBundleMgr == nullptr) {
+        NETMGR_LOG_E("Failed to get bundle manager proxy.");
+        return nullptr;
+    }
+    return iBundleMgr;
+}
 } // namespace
 const bool REGISTER_LOCAL_RESULT =
     SystemAbility::MakeAndRegisterAbility(DelayedSingleton<NetStatsService>::GetInstance().get());
@@ -117,6 +143,7 @@ NetStatsService::NetStatsService()
     netStatsCalibrate_ = std::make_shared<NetStatsCalibrate>();
 #ifndef UNITTEST_FORBID_FFRT
     trafficPlanFfrtQueue_ = std::make_shared<ffrt::queue>("TrafficPlanStatistic");
+    recordReportFfrtQueue_ = std::make_shared<ffrt::queue>("NetStatsReport");
 #endif
 #endif // SUPPORT_TRAFFIC_STATISTIC
 }
@@ -629,6 +656,7 @@ int32_t NetStatsService::GetAllTxBytes(uint64_t &stats)
 int32_t NetStatsService::GetUidRxBytes(uint64_t &stats, uint32_t uid)
 {
     NETMGR_LOG_D("Enter GetUidRxBytes, uid is %{public}d", uid);
+    RecordCallingData("GetUidRxBytes", uid);
     return NetsysController::GetInstance().GetUidStats(stats, static_cast<uint32_t>(StatsType::STATS_TYPE_RX_BYTES),
                                                        uid);
 }
@@ -636,8 +664,75 @@ int32_t NetStatsService::GetUidRxBytes(uint64_t &stats, uint32_t uid)
 int32_t NetStatsService::GetUidTxBytes(uint64_t &stats, uint32_t uid)
 {
     NETMGR_LOG_D("Enter GetUidTxBytes,uid is %{public}d", uid);
+    RecordCallingData("GetUidTxBytes", uid);
     return NetsysController::GetInstance().GetUidStats(stats, static_cast<uint32_t>(StatsType::STATS_TYPE_TX_BYTES),
                                                        uid);
+}
+
+void NetStatsService::RecordCallingData(const std::string &callingFunction, uint32_t uid)
+{
+    uint32_t callingUid = IPCSkeleton::GetCallingUid();
+    auto bms = GetBundleMgrProxy();
+    if (bms == nullptr) {
+        NETMGR_LOG_E("Failed to get bundle manager proxy.");
+        return;
+    }
+    std::string bundleName;
+    if (bms->GetNameForUid(callingUid, bundleName) != ERR_OK) {
+        NETMGR_LOG_E("Failed to get bundle name.");
+        bundleName = "uid" + std::to_string(callingUid);
+    }
+    std::lock_guard<ffrt::mutex> lock(recordCallingDataMutex_);
+    cJSON *recordJson = cJSON_CreateObject();
+    cJSON_AddNumberToObject(recordJson, "uid", callingUid);
+    cJSON_AddStringToObject(recordJson, "bundleName", bundleName.c_str());
+    cJSON_AddStringToObject(recordJson, "function", callingFunction.c_str());
+    cJSON_AddNumberToObject(recordJson, "paramUid", uid);
+    char *pRecordJson = cJSON_PrintUnformatted(recordJson);
+    cJSON_Delete(recordJson);
+    if (!pRecordJson) {
+        return;
+    }
+    std::string record(pRecordJson);
+    NETMGR_LOG_I("RecordCallingData %{public}s", record.c_str());
+    callingRecordSet_.insert(record);
+    cJSON_free(pRecordJson);
+    if (!isPostDelayReport_) {
+        isPostDelayReport_ = true;
+#ifndef UNITTEST_FORBID_FFRT
+        recordReportFfrtQueue_->submit([this]() {
+#endif
+                ReportCallingData();
+#ifndef UNITTEST_FORBID_FFRT
+            }, ffrt::task_attr().name("ReportCallingData").delay(NET_STATS_REPORT_DELAY));
+#endif
+    }
+}
+
+void NetStatsService::ReportCallingData()
+{
+    std::lock_guard<ffrt::mutex> lock(recordCallingDataMutex_);
+    if (callingRecordSet_.empty()) {
+        return;
+    }
+    BroadcastInfo info;
+    info.action = NET_STATS_CALLED_EVENT;
+    info.subscriberUid = HIVIEW_UID;
+    std::stringstream dataArray;
+    dataArray << "[";
+    for (auto it = callingRecordSet_.begin(); it != callingRecordSet_.end(); ++it) {
+        if (it != callingRecordSet_.begin()) {
+            dataArray << ",";
+        }
+        dataArray << *it;
+    }
+    dataArray << "]";
+    std::string record = dataArray.str();
+    NETMGR_LOG_I("ReportCallingData %{public}s", record.c_str());
+    std::map<std::string, std::string> param = {{NET_STATS_CALL_INFO_KEY, record}};
+    BroadcastManager::GetInstance().SendBroadcast(info, param);
+    callingRecordSet_.clear();
+    isPostDelayReport_ = false;
 }
 
 int32_t NetStatsService::GetIfaceStatsDetail(const std::string &iface, uint64_t start, uint64_t end,
