@@ -314,6 +314,7 @@ napi_value ConnectionModule::InitConnectionModule(napi_env env, napi_value expor
     NapiUtils::DefineProperties(env, exports, writableFunctions);
     InitClasses(env, exports);
     InitProperties(env, exports);
+    InitTcpStates(env, exports);
     AddCleanupHook(env);
     return exports;
 }
@@ -382,6 +383,37 @@ void ConnectionModule::InitProperties(napi_env env, napi_value exports)
     napi_value packtypes = NapiUtils::CreateObject(env);
     NapiUtils::DefineProperties(env, packtypes, packetsType);
     NapiUtils::SetNamedProperty(env, exports, INTERFACE_PACKETS_TYPE, packtypes);
+}
+
+void ConnectionModule::InitTcpStates(napi_env env, napi_value exports)
+{
+    std::initializer_list<napi_property_descriptor> tcpState = {
+        DECLARE_NAPI_STATIC_PROPERTY("TCP_ESTABLISHED",
+                                     NapiUtils::CreateUint32(env, static_cast<uint32_t>(TCP_ESTABLISHED))),
+        DECLARE_NAPI_STATIC_PROPERTY("TCP_SYN_SENT",
+                                     NapiUtils::CreateUint32(env, static_cast<uint32_t>(TCP_SYN_SENT))),
+        DECLARE_NAPI_STATIC_PROPERTY("TCP_SYN_RECV",
+                                     NapiUtils::CreateUint32(env, static_cast<uint32_t>(TCP_SYN_RECV))),
+        DECLARE_NAPI_STATIC_PROPERTY("TCP_FIN_WAIT1",
+                                     NapiUtils::CreateUint32(env, static_cast<uint32_t>(TCP_FIN_WAIT1))),
+        DECLARE_NAPI_STATIC_PROPERTY("TCP_FIN_WAIT2",
+                                     NapiUtils::CreateUint32(env, static_cast<uint32_t>(TCP_FIN_WAIT2))),
+        DECLARE_NAPI_STATIC_PROPERTY("TCP_TIME_WAIT",
+                                     NapiUtils::CreateUint32(env, static_cast<uint32_t>(TCP_TIME_WAIT))),
+        DECLARE_NAPI_STATIC_PROPERTY("TCP_CLOSE",
+                                     NapiUtils::CreateUint32(env, static_cast<uint32_t>(TCP_CLOSE))),
+        DECLARE_NAPI_STATIC_PROPERTY("TCP_CLOSE_WAIT",
+                                     NapiUtils::CreateUint32(env, static_cast<uint32_t>(TCP_CLOSE_WAIT))),
+        DECLARE_NAPI_STATIC_PROPERTY("TCP_LAST_ACK",
+                                     NapiUtils::CreateUint32(env, static_cast<uint32_t>(TCP_LAST_ACK))),
+        DECLARE_NAPI_STATIC_PROPERTY("TCP_LISTEN",
+                                     NapiUtils::CreateUint32(env, static_cast<uint32_t>(TCP_LISTEN))),
+        DECLARE_NAPI_STATIC_PROPERTY("TCP_CLOSING",
+                                     NapiUtils::CreateUint32(env, static_cast<uint32_t>(TCP_CLOSING))),
+    };
+    napi_value tcpStates = NapiUtils::CreateObject(env);
+    NapiUtils::DefineProperties(env, tcpStates, tcpState);
+    NapiUtils::SetNamedProperty(env, exports, INTERFACE_TCP_STATE, tcpStates);
 }
 
 void ConnectionModule::InitFamilyTypes(napi_env env, napi_value exports)
