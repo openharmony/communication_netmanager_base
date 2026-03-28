@@ -703,8 +703,8 @@ void NetStatsService::RecordCallingData(const std::string &callingFunction, uint
     cJSON_free(pRecordJson);
     if (!isPostDelayReport_) {
         isPostDelayReport_ = true;
-#ifndef UNITTEST_FORBID_FFRT
         std::weak_ptr<NetStatsService> wp = shared_from_this();
+#ifndef UNITTEST_FORBID_FFRT
         recordReportFfrtQueue_->submit([wp]() {
 #endif
                 if (auto sharedSelf = wp.lock()) {
