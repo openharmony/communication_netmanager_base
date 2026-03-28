@@ -684,6 +684,10 @@ void NetStatsService::RecordCallingData(const std::string &callingFunction, uint
     }
     std::lock_guard<ffrt::mutex> lock(recordCallingDataMutex_);
     cJSON *recordJson = cJSON_CreateObject();
+    if (recordJson == nullptr) {
+        NETMGR_LOG_E("recordJson create failed");
+        return;
+    }
     cJSON_AddNumberToObject(recordJson, "uid", callingUid);
     cJSON_AddStringToObject(recordJson, "bundleName", bundleName.c_str());
     cJSON_AddStringToObject(recordJson, "function", callingFunction.c_str());
@@ -694,15 +698,18 @@ void NetStatsService::RecordCallingData(const std::string &callingFunction, uint
         return;
     }
     std::string record(pRecordJson);
-    NETMGR_LOG_I("RecordCallingData %{public}s", record.c_str());
+    NETMGR_LOG_D("RecordCallingData %{public}s", record.c_str());
     callingRecordSet_.insert(record);
     cJSON_free(pRecordJson);
     if (!isPostDelayReport_) {
         isPostDelayReport_ = true;
 #ifndef UNITTEST_FORBID_FFRT
-        recordReportFfrtQueue_->submit([this]() {
+        std::weak_ptr<NetStatsService> wp = shared_from_this();
+        recordReportFfrtQueue_->submit([wp]() {
 #endif
-                ReportCallingData();
+                if (auto sharedSelf = wp.lock()) {
+                    sharedSelf->ReportCallingData();
+                }
 #ifndef UNITTEST_FORBID_FFRT
             }, ffrt::task_attr().name("ReportCallingData").delay(NET_STATS_REPORT_DELAY));
 #endif
@@ -728,7 +735,7 @@ void NetStatsService::ReportCallingData()
     }
     dataArray << "]";
     std::string record = dataArray.str();
-    NETMGR_LOG_I("ReportCallingData %{public}s", record.c_str());
+    NETMGR_LOG_D("ReportCallingData %{public}s", record.c_str());
     std::map<std::string, std::string> param = {{NET_STATS_CALL_INFO_KEY, record}};
     BroadcastManager::GetInstance().SendBroadcast(info, param);
     callingRecordSet_.clear();
