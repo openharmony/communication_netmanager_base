@@ -718,7 +718,9 @@ void NetStatsService::RecordCallingData(const std::string &callingFunction, uint
 
 void NetStatsService::ReportCallingData()
 {
+#ifndef UNITTEST_FORBID_FFRT
     std::lock_guard<ffrt::mutex> lock(recordCallingDataMutex_);
+#endif
     if (callingRecordSet_.empty()) {
         return;
     }
