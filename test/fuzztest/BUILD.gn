@@ -16,6 +16,7 @@ group("fuzztest") {
 
   deps = [
     "common_fuzzer:fuzztest",
+    "isdeadflowresettargetbundle_fuzzer:fuzztest",
     "netbasebranch_fuzzer:fuzztest",
     "netconnclient_fuzzer:fuzztest",
     "netpolicyclient_fuzzer:fuzztest",
