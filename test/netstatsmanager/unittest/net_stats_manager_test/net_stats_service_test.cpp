@@ -911,8 +911,10 @@ HWTEST_F(NetStatsServiceTest, ReportCallingDataTest002, TestSize.Level1)
     auto netStatsService = DelayedSingleton<NetStatsService>::GetInstance();
     netStatsService->callingRecordSet_.clear();
     netStatsService->isPostDelayReport_ = false;
-    netStatsService->callingRecordSet_.insert("{\"uid\":1001,\"bundleName\":\"test\",\"function\":\"GetUidRxBytes\",\"paramUid\":1001}");
-    netStatsService->callingRecordSet_.insert("{\"uid\":1002,\"bundleName\":\"test\",\"function\":\"GetUidTxBytes\",\"paramUid\":1002}");
+    netStatsService->callingRecordSet_.insert(
+        "{\"uid\":1001,\"bundleName\":\"test\",\"function\":\"GetUidRxBytes\",\"paramUid\":1001}");
+    netStatsService->callingRecordSet_.insert(
+        "{\"uid\":1002,\"bundleName\":\"test\",\"function\":\"GetUidTxBytes\",\"paramUid\":1002}");
     EXPECT_EQ(netStatsService->callingRecordSet_.size(), 2u);
     netStatsService->ReportCallingData();
     EXPECT_EQ(netStatsService->callingRecordSet_.size(), 0u);
