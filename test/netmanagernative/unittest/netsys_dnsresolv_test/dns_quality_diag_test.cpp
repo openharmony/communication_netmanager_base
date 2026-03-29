@@ -400,6 +400,24 @@ HWTEST_F(DnsQualityDiagTest, add_dns_report_ShouldNotAddReport_WhenReportListIsF
               0);
 }
 
+HWTEST_F(DnsQualityDiagTest, ReportDnsResult_ShouldIgnore_WhenFailCauseIsFirewallInterception, TestSize.Level0)
+{
+    uint16_t netId = 1;
+    uint16_t uid = 1;
+    uint32_t pid = 1;
+    int32_t usedtime = 100;
+    char name[] = "test";
+    uint32_t size = 10;
+    int32_t failreason = -1202;
+    QueryParam queryParam;
+    queryParam.type = 1;
+    AddrInfo addrinfo;
+ 
+    int32_t result =
+        dnsQualityDiag.ReportDnsResult(netId, uid, pid, usedtime, name, size, failreason, queryParam, &addrinfo);
+    EXPECT_EQ(result, 0);
+}
+
 HWTEST_F(DnsQualityDiagTest, add_dns_query_report_ShouldReturnZero_WhenCalled_01, TestSize.Level0)
 {
     std::shared_ptr<NetsysNative::NetDnsQueryResultReport> queryReport;
