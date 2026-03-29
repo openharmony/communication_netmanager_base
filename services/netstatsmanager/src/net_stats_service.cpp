@@ -727,18 +727,17 @@ void NetStatsService::ReportCallingData()
     BroadcastInfo info;
     info.action = NET_STATS_CALLED_EVENT;
     info.subscriberUid = HIVIEW_UID;
-    std::stringstream dataArray;
-    dataArray << "[";
+
+    std::string dataArray("[");
     for (auto it = callingRecordSet_.begin(); it != callingRecordSet_.end(); ++it) {
         if (it != callingRecordSet_.begin()) {
-            dataArray << ",";
+            dataArray.append(",");
         }
-        dataArray << *it;
+        dataArray.append(*it);
     }
-    dataArray << "]";
-    std::string record = dataArray.str();
-    NETMGR_LOG_D("ReportCallingData %{public}s", record.c_str());
-    std::map<std::string, std::string> param = {{NET_STATS_CALL_INFO_KEY, record}};
+    dataArray.append("]");
+    NETMGR_LOG_D("ReportCallingData %{public}s", dataArray.c_str());
+    std::map<std::string, std::string> param = {{NET_STATS_CALL_INFO_KEY, dataArray}};
     BroadcastManager::GetInstance().SendBroadcast(info, param);
     callingRecordSet_.clear();
     isPostDelayReport_ = false;
