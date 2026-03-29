@@ -34,6 +34,7 @@ const char *DNS_URL_HEADER = "DnsProbeUrl:";
 const char NEW_LINE_STR = '\n';
 const uint32_t TIME_DELAY = 500;
 constexpr const uint32_t DNS_ABNORMAL_REPORT_INTERVAL = 2;
+static const int32_t DNS_FAIL_REASON_FIREWALL = -1202;
 
 DnsQualityDiag::DnsQualityDiag()
     : defaultNetId_(0),
@@ -97,6 +98,9 @@ int32_t DnsQualityDiag::ParseReportAddr(uint32_t size, AddrInfo* addrinfo, Netsy
 int32_t DnsQualityDiag::ReportDnsResult(uint16_t netId, uint16_t uid, uint32_t pid, int32_t usedtime,
     char* name, uint32_t size, int32_t failreason, QueryParam queryParam, AddrInfo* addrinfo)
 {
+    if (failreason == DNS_FAIL_REASON_FIREWALL) {
+        return 0;
+    }
     std::unique_lock<std::mutex> locker(dnsReportResultMutex_);
     bool reportSizeReachLimit = (report_.size() >= MAX_RESULT_SIZE);
     locker.unlock();
@@ -104,7 +108,7 @@ int32_t DnsQualityDiag::ReportDnsResult(uint16_t netId, uint16_t uid, uint32_t p
                     netId, uid, pid, usedtime, size, failreason);
 
     if (queryParam.type == 1) {
-        NETNATIVE_LOG_D("ReportDnsResult: query from Netmanager ignore report");
+        // query from Netmanager ignore report
         return 0;
     }
 
