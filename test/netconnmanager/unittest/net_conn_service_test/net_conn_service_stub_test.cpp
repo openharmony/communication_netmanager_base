@@ -1677,5 +1677,19 @@ HWTEST_F(NetConnServiceStubTest, OnIsDeadFlowResetTargetBundleTest003, TestSize.
     int32_t ret = SendRemoteRequest(data, ConnInterfaceCode::CMD_NM_DEAD_FLOW_RESET_TARGET_BUNDLE);
     EXPECT_EQ(ret, NETMANAGER_ERR_READ_DATA_FAIL);
 }
+
+/**
+ * @tc.name: OnIsDeadFlowResetTargetBundleTest004
+ * @tc.desc: Test NetConnServiceStub OnIsDeadFlowResetTargetBundle with oversized bundleName.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NetConnServiceStubTest, OnIsDeadFlowResetTargetBundleTest004, TestSize.Level1)
+{
+    MessageParcel data;
+    EXPECT_TRUE(data.WriteInterfaceToken(NetConnServiceStub::GetDescriptor()));
+    EXPECT_TRUE(data.WriteString(std::string(257, 'a')));
+    int32_t ret = SendRemoteRequest(data, ConnInterfaceCode::CMD_NM_DEAD_FLOW_RESET_TARGET_BUNDLE);
+    EXPECT_EQ(ret, NETMANAGER_ERR_INVALID_PARAMETER);
+}
 } // namespace NetManagerStandard
 } // namespace OHOS

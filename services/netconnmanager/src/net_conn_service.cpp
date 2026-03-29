@@ -4496,7 +4496,7 @@ int32_t NetConnService::GetSystemNetPortStates(NetPortStatesInfo &netPortStatesI
 int32_t NetConnService::UpdateUidDeadFlowReset(const std::vector<std::string> &bundleNameVec)
 {
     std::unique_lock<ffrt::shared_mutex> lock(deadFlowResetVecMutex_);
-    DeadFlowResetBundleNameVec_ = bundleNameVec;
+    deadFlowResetBundleNameVec_ = bundleNameVec;
     for (auto &bundleName : bundleNameVec) {
         NETMGR_LOG_I("UpdateUidDeadFlowReset bundle name: [%{public}s].", bundleName.c_str());
     }
@@ -4507,8 +4507,8 @@ int32_t NetConnService::IsDeadFlowResetTargetBundle(const std::string &bundleNam
 {
     flag = false;
     std::shared_lock<ffrt::shared_mutex> lock(deadFlowResetVecMutex_);
-    if (std::find(DeadFlowResetBundleNameVec_.begin(), DeadFlowResetBundleNameVec_.end(), bundleName)
-        != DeadFlowResetBundleNameVec_.end()) {
+    if (std::find(deadFlowResetBundleNameVec_.begin(), deadFlowResetBundleNameVec_.end(), bundleName)
+        != deadFlowResetBundleNameVec_.end()) {
         NETMGR_LOG_I("FindDeadFlowReset Bundle [%{public}s].", bundleName.c_str());
         flag = true;
     }
