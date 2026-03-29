@@ -34,7 +34,7 @@ const char *DNS_URL_HEADER = "DnsProbeUrl:";
 const char NEW_LINE_STR = '\n';
 const uint32_t TIME_DELAY = 500;
 constexpr const uint32_t DNS_ABNORMAL_REPORT_INTERVAL = 2;
-static const int32_t DNS_FAIL_REASON_FIREWALL = -1202;
+constexpr int32_t DNS_FAIL_REASON_FIREWALL = -1202;
 
 DnsQualityDiag::DnsQualityDiag()
     : defaultNetId_(0),
