@@ -29,6 +29,15 @@
 namespace OHOS {
 namespace NetManagerStandard {
 
+class ErrorDeadFlowResetStub : public MockNetConnServiceStub {
+public:
+    int32_t IsDeadFlowResetTargetBundle(const std::string &bundleName, bool &flag) override
+    {
+        flag = false;
+        return NETMANAGER_ERR_INTERNAL;
+    }
+};
+
 using namespace testing::ext;
 
 class NetConnServiceRegionalStubTest : public testing::Test {
@@ -220,6 +229,34 @@ HWTEST_F(NetConnServiceRegionalStubTest, OnIsDeadFlowResetTargetBundleTest003, T
     data.WriteString(bundleName);
     auto ret = instance_->OnIsDeadFlowResetTargetBundle(data, reply);
     EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+}
+
+HWTEST_F(NetConnServiceRegionalStubTest, OnIsDeadFlowResetTargetBundleTest004, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    std::string bundleName(257, 'a');
+    data.WriteString(bundleName);
+    auto ret = instance_->OnIsDeadFlowResetTargetBundle(data, reply);
+    EXPECT_EQ(ret, NETMANAGER_ERR_INVALID_PARAMETER);
+}
+
+HWTEST_F(NetConnServiceRegionalStubTest, OnIsDeadFlowResetTargetBundleTest005, TestSize.Level1)
+{
+    auto errorStub = std::make_shared<ErrorDeadFlowResetStub>();
+    MessageParcel data;
+    MessageParcel reply;
+    std::string bundleName = "com.test.bundle";
+    data.WriteString(bundleName);
+    auto ret = errorStub->OnIsDeadFlowResetTargetBundle(data, reply);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+
+    int32_t result = NETMANAGER_SUCCESS;
+    EXPECT_TRUE(reply.ReadInt32(result));
+    EXPECT_EQ(result, NETMANAGER_ERR_INTERNAL);
+
+    bool flag = false;
+    EXPECT_FALSE(reply.ReadBool(flag));
 }
 }
 }

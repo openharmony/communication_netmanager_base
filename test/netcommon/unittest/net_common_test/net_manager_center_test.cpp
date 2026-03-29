@@ -718,21 +718,23 @@ HWTEST_F(NetManagerCenterTest, UpdateUidDeadFlowResetTest001, TestSize.Level1)
 
 HWTEST_F(NetManagerCenterTest, UpdateUidDeadFlowResetTest002, TestSize.Level1)
 {
+    NetManagerCenter netManagerCenter;
     sptr<NetConnBaseService> connService = new (std::nothrow) TestConnService();
-    instance_.RegisterConnService(connService);
+    netManagerCenter.RegisterConnService(connService);
     std::vector<std::string> bundleNameVec;
     bundleNameVec.push_back("com.test.bundle1");
     bundleNameVec.push_back("com.test.bundle2");
-    auto ret = instance_.UpdateUidDeadFlowReset(bundleNameVec);
+    auto ret = netManagerCenter.UpdateUidDeadFlowReset(bundleNameVec);
     EXPECT_NE(ret, NETMANAGER_ERROR);
 }
 
 HWTEST_F(NetManagerCenterTest, UpdateUidDeadFlowResetTest003, TestSize.Level1)
 {
+    NetManagerCenter netManagerCenter;
     sptr<NetConnBaseService> connService = new (std::nothrow) TestConnService();
-    instance_.RegisterConnService(connService);
+    netManagerCenter.RegisterConnService(connService);
     std::vector<std::string> bundleNameVec;
-    auto ret = instance_.UpdateUidDeadFlowReset(bundleNameVec);
+    auto ret = netManagerCenter.UpdateUidDeadFlowReset(bundleNameVec);
     EXPECT_NE(ret, NETMANAGER_ERROR);
 }
 

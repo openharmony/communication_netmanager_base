@@ -22,6 +22,8 @@
 #include <new>
 #include <string>
 
+#include "securec.h"
+
 #include "message_parcel.h"
 #include "net_conn_service_proxy.h"
 #include "net_conn_service_stub.h"
@@ -31,6 +33,10 @@ namespace OHOS {
 namespace NetManagerStandard {
 namespace {
 constexpr size_t MAX_BUNDLE_NAME_LEN = 256;
+constexpr uint8_t MODE_COUNT = 4;
+constexpr uint8_t MODE_SKIP_TOKEN = 0;
+constexpr uint8_t MODE_WRITE_EMPTY_BUNDLE = 2;
+constexpr uint8_t MODE_WRITE_FUZZ_BUNDLE = 3;
 const uint8_t *g_baseFuzzData = nullptr;
 size_t g_baseFuzzSize = 0;
 size_t g_baseFuzzPos = 0;
@@ -63,7 +69,9 @@ T GetData()
         sizeof(T) > g_baseFuzzSize - g_baseFuzzPos) {
         return value;
     }
-    std::memcpy(&value, g_baseFuzzData + g_baseFuzzPos, sizeof(T));
+    if (memcpy_s(&value, sizeof(T), g_baseFuzzData + g_baseFuzzPos, sizeof(T)) != EOK) {
+        return T {};
+    }
     g_baseFuzzPos += sizeof(T);
     return value;
 }
@@ -114,15 +122,14 @@ void StubOnRemoteRequestFuzzTest(const uint8_t *data, size_t size)
     MessageParcel request;
     MessageParcel reply;
     MessageOption option;
-    uint8_t mode = GetData<uint8_t>() % 4;
-
-    if (mode != 0) {
+    uint8_t mode = GetData<uint8_t>() % MODE_COUNT;
+    if (mode != MODE_SKIP_TOKEN) {
         (void)request.WriteInterfaceToken(NetConnServiceStub::GetDescriptor());
     }
-    if (mode == 2) {
+    if (mode == MODE_WRITE_EMPTY_BUNDLE) {
         (void)request.WriteString("");
     }
-    if (mode == 3) {
+    if (mode == MODE_WRITE_FUZZ_BUNDLE) {
         (void)request.WriteString(GetStringFromData());
     }
 

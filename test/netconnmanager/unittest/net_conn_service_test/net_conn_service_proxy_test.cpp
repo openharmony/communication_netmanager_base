@@ -37,6 +37,13 @@ constexpr int32_t TEST_SOCKETFD = 2;
 constexpr int32_t TEST_SUPPLIERID = 1021;
 
 uint32_t g_supplierId = 0;
+enum DeadFlowReplyMode {
+    DEAD_FLOW_REPLY_NORMAL = 0,
+    DEAD_FLOW_REPLY_SKIP_RESULT,
+    DEAD_FLOW_REPLY_SKIP_BOOL,
+    DEAD_FLOW_REPLY_RESULT_ERROR,
+};
+
 class MockNetIRemoteObject : public IRemoteObject {
 public:
     MockNetIRemoteObject() : IRemoteObject(u"mock_i_remote_object") {}
@@ -93,47 +100,66 @@ public:
 
     void HandleDeadFlowResetTargetBundleReply(MessageParcel &reply)
     {
+        if (deadFlowReplyMode_ == DEAD_FLOW_REPLY_SKIP_RESULT) {
+            return;
+        }
+        if (deadFlowReplyMode_ == DEAD_FLOW_REPLY_RESULT_ERROR) {
+            reply.WriteInt32(NETMANAGER_ERR_INTERNAL);
+            return;
+        }
+        reply.WriteInt32(NETMANAGER_SUCCESS);
+        if (deadFlowReplyMode_ == DEAD_FLOW_REPLY_SKIP_BOOL) {
+            return;
+        }
         reply.WriteBool(true);
     }
 
     int SendRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override
     {
-        reply.WriteInt32(NETMANAGER_SUCCESS);
         switch (code) {
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_IFACE_NAMES):
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_SPECIFIC_NET):
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_ALL_NETS):
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_NET_ID_BY_IDENTIFIER):
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_GET_IFACENAME_IDENT_MAPS):
+                reply.WriteInt32(NETMANAGER_SUCCESS);
                 HandleGetIfaceNamesReply(reply);
                 break;
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_IFACENAME_BY_TYPE):
+                reply.WriteInt32(NETMANAGER_SUCCESS);
                 HandleGetIfaceNameByTypeReply(reply);
                 break;
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GETDEFAULTNETWORK):
+                reply.WriteInt32(NETMANAGER_SUCCESS);
                 HandleGetDefaultNetReply(reply);
                 break;
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_HASDEFAULTNET):
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_IS_DEFAULT_NET_METERED):
+                reply.WriteInt32(NETMANAGER_SUCCESS);
                 HandleHasDefaultNetReply(reply);
                 break;
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_CONNECTION_PROPERTIES):
+                reply.WriteInt32(NETMANAGER_SUCCESS);
                 HandleGetConnectionPropertiesReply(reply);
                 break;
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_NET_CAPABILITIES):
+                reply.WriteInt32(NETMANAGER_SUCCESS);
                 HandleGetNetCapabilitiesReply(reply);
                 break;
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_GLOBAL_HTTP_PROXY):
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_DEFAULT_HTTP_PROXY):
+                reply.WriteInt32(NETMANAGER_SUCCESS);
                 HandleGetHttpProxyReply(reply);
                 break;
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_GET_CONNECT_OWNER_UID):
+                reply.WriteInt32(NETMANAGER_SUCCESS);
                 HandleGetConnectOwnerUidReply(reply);
                 break;
             case static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_DEAD_FLOW_RESET_TARGET_BUNDLE):
                 HandleDeadFlowResetTargetBundleReply(reply);
                 break;
             default:
+                reply.WriteInt32(NETMANAGER_SUCCESS);
                 reply.WriteUint32(TEST_SUPPLIERID);
                 break;
         }
@@ -187,8 +213,14 @@ public:
         eCode = errorCode;
     }
 
+    void SetDeadFlowReplyMode(DeadFlowReplyMode mode)
+    {
+        deadFlowReplyMode_ = mode;
+    }
+
 private:
     int eCode = NETMANAGER_SUCCESS;
+    DeadFlowReplyMode deadFlowReplyMode_ = DEAD_FLOW_REPLY_NORMAL;
 };
 
 class NetDetectionTestCallback : public IRemoteStub<INetDetectionCallback> {
@@ -229,7 +261,11 @@ void NetConnServiceProxyTest::TearDownTestCase() {}
 
 void NetConnServiceProxyTest::SetUp() {}
 
-void NetConnServiceProxyTest::TearDown() {}
+void NetConnServiceProxyTest::TearDown()
+{
+    remoteObj_->SetErrorCode(NETMANAGER_SUCCESS);
+    remoteObj_->SetDeadFlowReplyMode(DEAD_FLOW_REPLY_NORMAL);
+}
 
 /**
  * @tc.name: SystemReadyTest001
@@ -878,6 +914,42 @@ HWTEST_F(NetConnServiceProxyTest, IsDeadFlowResetTargetBundleTest002, TestSize.L
     bool flag = false;
     int32_t ret = instance_->IsDeadFlowResetTargetBundle(bundleName, flag);
     EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+}
+
+HWTEST_F(NetConnServiceProxyTest, IsDeadFlowResetTargetBundleTest003, TestSize.Level1)
+{
+    remoteObj_->SetErrorCode(NETMANAGER_ERR_INTERNAL);
+    std::string bundleName = "com.test.bundle";
+    bool flag = false;
+    int32_t ret = instance_->IsDeadFlowResetTargetBundle(bundleName, flag);
+    EXPECT_EQ(ret, NETMANAGER_ERR_INTERNAL);
+}
+
+HWTEST_F(NetConnServiceProxyTest, IsDeadFlowResetTargetBundleTest004, TestSize.Level1)
+{
+    remoteObj_->SetDeadFlowReplyMode(DEAD_FLOW_REPLY_SKIP_RESULT);
+    std::string bundleName = "com.test.bundle";
+    bool flag = false;
+    int32_t ret = instance_->IsDeadFlowResetTargetBundle(bundleName, flag);
+    EXPECT_EQ(ret, NETMANAGER_ERR_READ_REPLY_FAIL);
+}
+
+HWTEST_F(NetConnServiceProxyTest, IsDeadFlowResetTargetBundleTest005, TestSize.Level1)
+{
+    remoteObj_->SetDeadFlowReplyMode(DEAD_FLOW_REPLY_RESULT_ERROR);
+    std::string bundleName = "com.test.bundle";
+    bool flag = false;
+    int32_t ret = instance_->IsDeadFlowResetTargetBundle(bundleName, flag);
+    EXPECT_EQ(ret, NETMANAGER_ERR_INTERNAL);
+}
+
+HWTEST_F(NetConnServiceProxyTest, IsDeadFlowResetTargetBundleTest006, TestSize.Level1)
+{
+    remoteObj_->SetDeadFlowReplyMode(DEAD_FLOW_REPLY_SKIP_BOOL);
+    std::string bundleName = "com.test.bundle";
+    bool flag = false;
+    int32_t ret = instance_->IsDeadFlowResetTargetBundle(bundleName, flag);
+    EXPECT_EQ(ret, NETMANAGER_ERR_READ_REPLY_FAIL);
 }
 }
 } // namespace NetManagerStandard

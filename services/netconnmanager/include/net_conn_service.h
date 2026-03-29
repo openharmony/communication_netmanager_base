@@ -699,7 +699,7 @@ private:
     std::shared_mutex uidLostDelayMutex_;
     std::set<uint32_t> uidLostDelaySet_;
     ffrt::shared_mutex deadFlowResetVecMutex_;
-    std::vector<std::string> DeadFlowResetBundleNameVec_;
+    std::vector<std::string> deadFlowResetBundleNameVec_;
     SafeMap<int32_t, bool> notifyLostDelayCache_;
     ffrt::shared_mutex defaultNetSupplierMutex_;
 

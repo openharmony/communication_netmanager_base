@@ -2120,6 +2120,7 @@ int32_t NetConnServiceProxy::SetAppIsFrozened(uint32_t uid, bool isFrozened)
 int32_t NetConnServiceProxy::IsDeadFlowResetTargetBundle(const std::string &bundleName, bool &flag)
 {
     MessageParcel dataParcel;
+    // LCOV_EXCL_START
     if (!WriteInterfaceToken(dataParcel)) {
         NETMGR_LOG_E("WriteInterfaceToken failed");
         return NETMANAGER_ERR_WRITE_DESCRIPTOR_TOKEN_FAIL;
@@ -2127,6 +2128,7 @@ int32_t NetConnServiceProxy::IsDeadFlowResetTargetBundle(const std::string &bund
     if (!dataParcel.WriteString(bundleName)) {
         return NETMANAGER_ERR_WRITE_DATA_FAIL;
     }
+    // LCOV_EXCL_STOP
 
     MessageParcel replyParcel;
     int32_t retCode = RemoteSendRequest(static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_DEAD_FLOW_RESET_TARGET_BUNDLE),
