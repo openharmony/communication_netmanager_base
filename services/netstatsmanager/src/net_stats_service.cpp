@@ -104,7 +104,7 @@ enum NetStatusConn : uint8_t {
 static constexpr uint32_t TELEPHONY_EVENT_MASK =
     Telephony::TelephonyObserverBroker::OBSERVER_MASK_SIM_STATE;
 #endif // SUPPORT_TRAFFIC_STATISTIC
-constexpr const int32_t NET_STATS_REPORT_DELAY = 2 * 60 * 1000 * 1000;  // 2h
+constexpr const uint64_t NET_STATS_REPORT_DELAY = static_cast<uint64_t>(2 * 60 * 60 * 1000) * 1000;  // 2h
 constexpr const int32_t HIVIEW_UID = 1201;
 constexpr const char *NET_STATS_CALLED_EVENT = "custom.event.NET_STATS_CALLED";
 constexpr const char *NET_STATS_CALL_INFO_KEY = "NET_STATS_CALL_INFO";
@@ -682,7 +682,6 @@ void NetStatsService::RecordCallingData(const std::string &callingFunction, uint
         NETMGR_LOG_E("Failed to get bundle name.");
         bundleName = "uid" + std::to_string(callingUid);
     }
-    std::lock_guard<ffrt::mutex> lock(recordCallingDataMutex_);
     cJSON *recordJson = cJSON_CreateObject();
     if (recordJson == nullptr) {
         NETMGR_LOG_E("recordJson create failed");
@@ -699,7 +698,10 @@ void NetStatsService::RecordCallingData(const std::string &callingFunction, uint
     }
     std::string record(pRecordJson);
     NETMGR_LOG_D("RecordCallingData %{public}s", record.c_str());
-    callingRecordSet_.insert(record);
+    {
+        std::lock_guard<ffrt::mutex> lock(recordCallingDataMutex_);
+        callingRecordSet_.insert(record);
+    }
     cJSON_free(pRecordJson);
     if (!isPostDelayReport_) {
         isPostDelayReport_ = true;
@@ -718,9 +720,7 @@ void NetStatsService::RecordCallingData(const std::string &callingFunction, uint
 
 void NetStatsService::ReportCallingData()
 {
-#ifndef UNITTEST_FORBID_FFRT
     std::lock_guard<ffrt::mutex> lock(recordCallingDataMutex_);
-#endif
     if (callingRecordSet_.empty()) {
         return;
     }
