@@ -108,27 +108,6 @@ constexpr const uint64_t NET_STATS_REPORT_DELAY = static_cast<uint64_t>(2 * 60 *
 constexpr const int32_t HIVIEW_UID = 1201;
 constexpr const char *NET_STATS_CALLED_EVENT = "custom.event.NET_STATS_CALLED";
 constexpr const char *NET_STATS_CALL_INFO_KEY = "NET_STATS_CALL_INFO";
-sptr<AppExecFwk::IBundleMgr> GetBundleMgrProxy()
-{
-    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (!systemAbilityManager) {
-        NETMGR_LOG_E("fail to get system ability mgr.");
-        return nullptr;
-    }
-
-    auto remoteObject = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    if (!remoteObject) {
-        NETMGR_LOG_E("fail to get bundle manager proxy.");
-        return nullptr;
-    }
-
-    sptr<AppExecFwk::IBundleMgr> iBundleMgr = iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
-    if (iBundleMgr == nullptr) {
-        NETMGR_LOG_E("Failed to get bundle manager proxy.");
-        return nullptr;
-    }
-    return iBundleMgr;
-}
 } // namespace
 const bool REGISTER_LOCAL_RESULT =
     SystemAbility::MakeAndRegisterAbility(DelayedSingleton<NetStatsService>::GetInstance().get());
@@ -672,16 +651,8 @@ int32_t NetStatsService::GetUidTxBytes(uint64_t &stats, uint32_t uid)
 void NetStatsService::RecordCallingData(const std::string &callingFunction, uint32_t uid)
 {
     uint32_t callingUid = IPCSkeleton::GetCallingUid();
-    auto bms = GetBundleMgrProxy();
-    if (bms == nullptr) {
-        NETMGR_LOG_E("Failed to get bundle manager proxy.");
-        return;
-    }
-    std::string bundleName;
-    if (bms->GetNameForUid(callingUid, bundleName) != ERR_OK) {
-        NETMGR_LOG_E("Failed to get bundle name.");
-        bundleName = "uid" + std::to_string(callingUid);
-    }
+    SampleBundleInfo callingBundleInfo = GetSampleBundleInfoForUid(callingUid);
+    std::string bundleName = callingBundleInfo.bundleName_;
     cJSON *recordJson = cJSON_CreateObject();
     if (recordJson == nullptr) {
         NETMGR_LOG_E("recordJson create failed");
