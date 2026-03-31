@@ -197,6 +197,8 @@ private:
     void InsertHistoryData(int32_t simId);
     void InitHistoryData();
     void EraseNetStatsInfoByUserId(std::vector<NetStatsInfoSequence> &infos, int32_t userId);
+    void RecordCallingData(const std::string &callingFunction, uint32_t uid);
+    void ReportCallingData();
 
 private:
     enum ServiceRunningState {
@@ -232,6 +234,10 @@ private:
     sptr<TelephonyInfoObserver> telephonyInfoObserver_ = nullptr;
 #endif // SUPPORT_TRAFFIC_STATISTIC
     std::mutex timerMutex_;
+    std::set<std::string> callingRecordSet_;
+    ffrt::mutex recordCallingDataMutex_;
+    std::shared_ptr<ffrt::queue> recordReportFfrtQueue_;
+    bool isPostDelayReport_ = false;
 };
 
 #ifdef SUPPORT_TRAFFIC_STATISTIC

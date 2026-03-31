@@ -67,6 +67,7 @@
 #include "net_stats_subscriber.h"
 #include "ipc_skeleton.h"
 #include "net_conn_client.h"
+#include "cJSON.h"
 
 namespace OHOS {
 namespace NetManagerStandard {
@@ -103,6 +104,10 @@ enum NetStatusConn : uint8_t {
 static constexpr uint32_t TELEPHONY_EVENT_MASK =
     Telephony::TelephonyObserverBroker::OBSERVER_MASK_SIM_STATE;
 #endif // SUPPORT_TRAFFIC_STATISTIC
+constexpr const uint64_t NET_STATS_REPORT_DELAY = static_cast<uint64_t>(2 * 60 * 60 * 1000) * 1000;  // 2h
+constexpr const int32_t HIVIEW_UID = 1201;
+constexpr const char *NET_STATS_CALLED_EVENT = "custom.event.NET_STATS_CALLED";
+constexpr const char *NET_STATS_CALL_INFO_KEY = "NET_STATS_CALL_INFO";
 } // namespace
 const bool REGISTER_LOCAL_RESULT =
     SystemAbility::MakeAndRegisterAbility(DelayedSingleton<NetStatsService>::GetInstance().get());
@@ -117,6 +122,7 @@ NetStatsService::NetStatsService()
     netStatsCalibrate_ = std::make_shared<NetStatsCalibrate>();
 #ifndef UNITTEST_FORBID_FFRT
     trafficPlanFfrtQueue_ = std::make_shared<ffrt::queue>("TrafficPlanStatistic");
+    recordReportFfrtQueue_ = std::make_shared<ffrt::queue>("NetStatsReport");
 #endif
 #endif // SUPPORT_TRAFFIC_STATISTIC
 }
@@ -629,6 +635,7 @@ int32_t NetStatsService::GetAllTxBytes(uint64_t &stats)
 int32_t NetStatsService::GetUidRxBytes(uint64_t &stats, uint32_t uid)
 {
     NETMGR_LOG_D("Enter GetUidRxBytes, uid is %{public}d", uid);
+    RecordCallingData("GetUidRxBytes", uid);
     return NetsysController::GetInstance().GetUidStats(stats, static_cast<uint32_t>(StatsType::STATS_TYPE_RX_BYTES),
                                                        uid);
 }
@@ -636,8 +643,75 @@ int32_t NetStatsService::GetUidRxBytes(uint64_t &stats, uint32_t uid)
 int32_t NetStatsService::GetUidTxBytes(uint64_t &stats, uint32_t uid)
 {
     NETMGR_LOG_D("Enter GetUidTxBytes,uid is %{public}d", uid);
+    RecordCallingData("GetUidTxBytes", uid);
     return NetsysController::GetInstance().GetUidStats(stats, static_cast<uint32_t>(StatsType::STATS_TYPE_TX_BYTES),
                                                        uid);
+}
+
+void NetStatsService::RecordCallingData(const std::string &callingFunction, uint32_t uid)
+{
+    uint32_t callingUid = IPCSkeleton::GetCallingUid();
+    SampleBundleInfo callingBundleInfo = GetSampleBundleInfoForUid(callingUid);
+    std::string bundleName = callingBundleInfo.bundleName_;
+    cJSON *recordJson = cJSON_CreateObject();
+    if (recordJson == nullptr) {
+        NETMGR_LOG_E("recordJson create failed");
+        return;
+    }
+    cJSON_AddNumberToObject(recordJson, "uid", callingUid);
+    cJSON_AddStringToObject(recordJson, "bundleName", bundleName.c_str());
+    cJSON_AddStringToObject(recordJson, "function", callingFunction.c_str());
+    cJSON_AddNumberToObject(recordJson, "paramUid", uid);
+    char *pRecordJson = cJSON_PrintUnformatted(recordJson);
+    cJSON_Delete(recordJson);
+    if (!pRecordJson) {
+        return;
+    }
+    std::string record(pRecordJson);
+    NETMGR_LOG_D("RecordCallingData %{public}s", record.c_str());
+    {
+        std::lock_guard<ffrt::mutex> lock(recordCallingDataMutex_);
+        callingRecordSet_.insert(record);
+    }
+    cJSON_free(pRecordJson);
+    if (!isPostDelayReport_) {
+        isPostDelayReport_ = true;
+        std::weak_ptr<NetStatsService> wp = shared_from_this();
+#ifndef UNITTEST_FORBID_FFRT
+        recordReportFfrtQueue_->submit([wp]() {
+#endif
+                if (auto sharedSelf = wp.lock()) {
+                    sharedSelf->ReportCallingData();
+                }
+#ifndef UNITTEST_FORBID_FFRT
+            }, ffrt::task_attr().name("ReportCallingData").delay(NET_STATS_REPORT_DELAY));
+#endif
+    }
+}
+
+void NetStatsService::ReportCallingData()
+{
+    std::lock_guard<ffrt::mutex> lock(recordCallingDataMutex_);
+    if (callingRecordSet_.empty()) {
+        return;
+    }
+    BroadcastInfo info;
+    info.action = NET_STATS_CALLED_EVENT;
+    info.subscriberUid = HIVIEW_UID;
+
+    std::string dataArray("[");
+    for (auto it = callingRecordSet_.begin(); it != callingRecordSet_.end(); ++it) {
+        if (it != callingRecordSet_.begin()) {
+            dataArray.append(",");
+        }
+        dataArray.append(*it);
+    }
+    dataArray.append("]");
+    NETMGR_LOG_D("ReportCallingData %{public}s", dataArray.c_str());
+    std::map<std::string, std::string> param = {{NET_STATS_CALL_INFO_KEY, dataArray}};
+    BroadcastManager::GetInstance().SendBroadcast(info, param);
+    callingRecordSet_.clear();
+    isPostDelayReport_ = false;
 }
 
 int32_t NetStatsService::GetIfaceStatsDetail(const std::string &iface, uint64_t start, uint64_t end,
