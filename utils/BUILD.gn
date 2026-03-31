@@ -122,10 +122,6 @@ ohos_shared_library("net_data_share") {
 
   branch_protector_ret = "pac_ret"
 
-  include_dirs = [
-    "common_utils/include",
-  ]
-
   sources = [
     "data_share/src/net_datashare_utils.cpp",
     "data_share/src/net_datashare_utils_iface.cpp",
