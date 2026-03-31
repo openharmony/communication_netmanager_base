@@ -460,5 +460,27 @@ HWTEST_F(NetStatsServiceTest, GetHistoryDataTest001, TestSize.Level1)
     ret = netStatsService->GetHistoryData(infos, "111", OTHER_ACCOUNT_UID, 0, UINT32_MAX);
     EXPECT_EQ(ret, NETMANAGER_ERROR);
 }
+
+HWTEST_F(NetStatsServiceTest, UpdateBpfMapTimerTaskTest001, TestSize.Level1)
+{
+    auto netStatsService = DelayedSingleton<NetStatsService>::GetInstance();
+    netStatsService->trafficPlanFfrtQueue_ = nullptr;
+    netStatsService->UpdateBpfMapTimerTask();
+    EXPECT_EQ(netStatsService->settingsTrafficMap_.size(), 0);
+}
+
+HWTEST_F(NetStatsServiceTest, NotifyTrafficAlertFfrtTest001, TestSize.Level1)
+{
+    NetStatsService netStatsService;
+    int32_t simId = 1;
+    uint8_t flag = 2;
+    bool ret = netStatsService.NotifyTrafficAlertFfrt(simId, flag);
+    EXPECT_EQ(ret, 0);
+
+    NetStatsService netStatsService2;
+    netStatsService2.trafficPlanFfrtQueue_ = nullptr;
+    ret = netStatsService2.NotifyTrafficAlertFfrt(simId, flag);
+    EXPECT_EQ(ret, 0);
+}
 } // namespace NetManagerStandard
 } // namespace OHOS

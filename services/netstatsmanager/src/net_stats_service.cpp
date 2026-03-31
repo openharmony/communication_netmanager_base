@@ -174,10 +174,6 @@ void NetStatsService::StartSysTimer()
         NetStatsRDB netStats;
         netStats.BackUpNetStatsFreqDB(NOTICE_DATABASE_NAME, NOTICE_DATABASE_BACK_NAME);
         UpdateBpfMapTimerTask();
-#ifndef UNITTEST_FORBID_FFRT
-        auto clearToastTimer_ = std::make_unique<FfrtTimer>();
-        clearToastTimer_->Start(DEFAULT_UPDATE_TRAFFIC_INFO_CYCLE_MS, [this]() { UpdateBpfMapTimer(); });
-#endif
 #endif // SUPPORT_TRAFFIC_STATISTIC
         UpdateStatsDataInner();
     };
@@ -1525,9 +1521,13 @@ void NetStatsService::UpdateBpfMapTimer()
 
 void NetStatsService::UpdateBpfMapTimerTask()
 {
+#ifndef UNITTEST_FORBID_FFRT
     ffrt::submit([this] {
+#endif
         UpdateBpfMapTimer();
+#ifndef UNITTEST_FORBID_FFRT
         }, ffrt::task_attr().name("update_bpfmap_timer_task").delay(UPDATE_BPF_MAP_DELAY_US));
+#endif
 }
 
 bool NetStatsService::CommonEventSimStateChanged(int32_t simId, int32_t simState)
@@ -2271,13 +2271,14 @@ int32_t NetStatsService::NotifyTrafficAlert(int32_t simId, uint8_t flag)
     }
     return NETMANAGER_SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t NetStatsService::NotifyTrafficAlertFfrt(int32_t simId, uint8_t flag)
 {
-#ifndef UNITTEST_FORBID_FFRT
     if (!trafficPlanFfrtQueue_) {
         return NETMANAGER_ERR_INTERNAL;
     }
+#ifndef UNITTEST_FORBID_FFRT
     trafficPlanFfrtQueue_->submit([this, simId, flag]() {
 #endif
         NotifyTrafficAlert(simId, flag);
@@ -2287,6 +2288,7 @@ int32_t NetStatsService::NotifyTrafficAlertFfrt(int32_t simId, uint8_t flag)
     return NETMANAGER_SUCCESS;
 }
 
+// LCOV_EXCL_START
 bool NetStatsService::GetNotifyStats(int32_t simId, uint8_t flag)
 {
     NETMGR_LOG_I("Enter GetNotifyStats.");
