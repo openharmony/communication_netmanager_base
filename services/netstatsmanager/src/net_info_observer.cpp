@@ -21,6 +21,7 @@
 #include "net_stats_cached.h"
 #include "net_stats_utils.h"
 #include "net_stats_service.h"
+#include "ffrt_inner.h"
  
 namespace OHOS {
 namespace NetManagerStandard {
