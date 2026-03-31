@@ -117,12 +117,12 @@ NetStatsService::NetStatsService()
 {
     netStatsCallback_ = std::make_shared<NetStatsCallback>();
     netStatsCached_ = std::make_shared<NetStatsCached>();
+    recordReportFfrtQueue_ = std::make_shared<ffrt::queue>("NetStatsReport");
 #ifdef SUPPORT_TRAFFIC_STATISTIC
     trafficObserver_ = std::make_unique<TrafficObserver>().release();
     netStatsCalibrate_ = std::make_shared<NetStatsCalibrate>();
 #ifndef UNITTEST_FORBID_FFRT
     trafficPlanFfrtQueue_ = std::make_shared<ffrt::queue>("TrafficPlanStatistic");
-    recordReportFfrtQueue_ = std::make_shared<ffrt::queue>("NetStatsReport");
 #endif
 #endif // SUPPORT_TRAFFIC_STATISTIC
 }
