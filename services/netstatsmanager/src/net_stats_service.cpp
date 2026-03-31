@@ -87,6 +87,7 @@ constexpr const char* UID = "uid";
 const std::string LIB_NET_BUNDLE_UTILS_PATH = "libnet_bundle_utils.z.so";
 constexpr uint64_t DELAY_US = 35 * 1000 * 1000;
 constexpr uint64_t UPDATE_FLAG_DELAY_US = 500 * 1000;
+constexpr uint32_t UPDATE_BPF_MAP_DELAY_US = 6 * 1000 * 1000;
 constexpr const char* COMMON_EVENT_STATUS = "usual.event.RGM_STATUS_CHANGED";
 constexpr const char* STATUS_FIELD = "rgmStatus";
 const std::string STATUS_UNLOCKED = "rgm_user_unlocked";
@@ -172,6 +173,11 @@ void NetStatsService::StartSysTimer()
 #ifdef SUPPORT_TRAFFIC_STATISTIC
         NetStatsRDB netStats;
         netStats.BackUpNetStatsFreqDB(NOTICE_DATABASE_NAME, NOTICE_DATABASE_BACK_NAME);
+        UpdateBpfMapTimerTask();
+#ifndef UNITTEST_FORBID_FFRT
+        auto clearToastTimer_ = std::make_unique<FfrtTimer>();
+        clearToastTimer_->Start(DEFAULT_UPDATE_TRAFFIC_INFO_CYCLE_MS, [this]() { UpdateBpfMapTimer(); });
+#endif
 #endif // SUPPORT_TRAFFIC_STATISTIC
         UpdateStatsDataInner();
     };
@@ -1517,6 +1523,13 @@ void NetStatsService::UpdateBpfMapTimer()
 #endif
 }
 
+void NetStatsService::UpdateBpfMapTimerTask()
+{
+    ffrt::submit([this] {
+        UpdateBpfMapTimer();
+        }, ffrt::task_attr().name("update_bpfmap_timer_task").delay(UPDATE_BPF_MAP_DELAY_US));
+}
+
 bool NetStatsService::CommonEventSimStateChanged(int32_t simId, int32_t simState)
 {
     if (!trafficPlanFfrtQueue_) {
@@ -2220,7 +2233,7 @@ int32_t TrafficObserver::OnExceedTrafficLimits(int8_t &flag)
         return -1;
     }
 
-    DelayedSingleton<NetStatsService>::GetInstance()->NotifyTrafficAlert(simId, trafficFlag);
+    DelayedSingleton<NetStatsService>::GetInstance()->NotifyTrafficAlertFfrt(simId, trafficFlag);
     return 0;
 }
 
@@ -2256,6 +2269,21 @@ int32_t NetStatsService::NotifyTrafficAlert(int32_t simId, uint8_t flag)
     } else {
         NETMGR_LOG_I("There is no need to pop up trafficLimit notification.");
     }
+    return NETMANAGER_SUCCESS;
+}
+
+int32_t NetStatsService::NotifyTrafficAlertFfrt(int32_t simId, uint8_t flag)
+{
+#ifndef UNITTEST_FORBID_FFRT
+    if (!trafficPlanFfrtQueue_) {
+        return NETMANAGER_ERR_INTERNAL;
+    }
+    trafficPlanFfrtQueue_->submit([this, simId, flag]() {
+#endif
+        NotifyTrafficAlert(simId, flag);
+#ifndef UNITTEST_FORBID_FFRT
+    });
+#endif
     return NETMANAGER_SUCCESS;
 }
 

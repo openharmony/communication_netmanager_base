@@ -105,6 +105,7 @@ public:
     void UpdateSettingsdata(int32_t simId, uint8_t flag, uint64_t value);
     std::map<int32_t, std::pair<ObserverPtr, SettingsInfoPtr>> GetSettingsObserverMap();
     int32_t NotifyTrafficAlert(int32_t simId, uint8_t flag);
+    int32_t NotifyTrafficAlertFfrt(int32_t simId, uint8_t flag);
     bool GetMonthlyLimitBySimId(int32_t simId, uint64_t &monthlyLimit);
     bool GetMonthlyMarkBySimId(int32_t simId, uint16_t &monthlyMark);
     bool GetdailyMarkBySimId(int32_t simId, uint16_t &dailyMark);
@@ -140,6 +141,7 @@ private:
 #endif
 #ifdef SUPPORT_TRAFFIC_STATISTIC
     void UpdateBpfMapTimer();
+    void UpdateBpfMapTimerTask();
     bool CommonEventSimStateChangedFfrt(int32_t simId, int32_t simState);
     bool CellularDataStateChangedFfrt(int32_t slotId, int32_t dataState);
     bool CommonEventCellularDataStateChanged(int32_t slotId, int32_t dataState);
