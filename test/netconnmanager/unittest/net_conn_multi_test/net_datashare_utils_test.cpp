@@ -25,6 +25,10 @@ namespace OHOS {
 namespace NetManagerStandard {
 using namespace testing::ext;
 
+constexpr const char *AIRPLANE_MODE_URI =
+    "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true&key=airplane_mode";
+constexpr const char *KEY_AIRPLANE_MODE = "settings.telephony.airplanemode";
+
 std::unique_ptr<NetDataShareHelperUtils> netDataShareHelperUtils_ = nullptr;
 class NetDataShareHelperUtilsTest : public testing::Test {
 public:

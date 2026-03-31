@@ -27,7 +27,7 @@ config("net_conn_manager_config") {
     "$NETSYSCONTROLLER_ROOT_DIR/include",
     "$NETMANAGER_BASE_ROOT/services/netmanagernative/fwmarkclient/include",
     "$INNERKITS_ROOT/netmanagernative/include",
-    "$NETMANAGER_BASE_ROOT/utils/data_share",
+    "$NETMANAGER_BASE_ROOT/utils/data_share/include",
   ]
 
   if(netmanager_base_enable_pac_proxy){
@@ -54,7 +54,6 @@ ohos_shared_library("net_conn_manager") {
     "src/net_conn_event_handler.cpp",
     "src/net_conn_service.cpp",
     "src/net_conn_service_iface.cpp",
-    "src/net_datashare_utils.cpp",
     "src/net_dns_resolve.cpp",
     "src/net_dual_stack_probe.cpp",
     "src/net_factoryreset_callback.cpp",
@@ -191,7 +190,6 @@ ohos_static_library("net_conn_manager_static") {
     "src/net_conn_event_handler.cpp",
     "src/net_conn_service.cpp",
     "src/net_conn_service_iface.cpp",
-    "src/net_datashare_utils.cpp",
     "src/net_dns_resolve.cpp",
     "src/net_dual_stack_probe.cpp",
     "src/net_factoryreset_callback.cpp",
