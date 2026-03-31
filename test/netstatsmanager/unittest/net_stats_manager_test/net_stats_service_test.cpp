@@ -869,5 +869,70 @@ HWTEST_F(NetStatsServiceTest, SetTrafficMapMaxValueTest001, TestSize.Level1)
     EXPECT_NE(netStatsService, nullptr);
 }
 #endif
+
+HWTEST_F(NetStatsServiceTest, RecordCallingDataTest001, TestSize.Level1)
+{
+    NetStatsService netStatsService;
+    netStatsService.callingRecordSet_.clear();
+    netStatsService.isPostDelayReport_ = false;
+    uint32_t uid = 1001;
+    netStatsService.RecordCallingData("GetUidRxBytes", uid);
+    EXPECT_EQ(netStatsService.callingRecordSet_.size(), 1u);
+    netStatsService.callingRecordSet_.clear();
+    netStatsService.isPostDelayReport_ = false;
+}
+
+HWTEST_F(NetStatsServiceTest, RecordCallingDataTest002, TestSize.Level1)
+{
+    NetStatsService netStatsService;
+    netStatsService.callingRecordSet_.clear();
+    netStatsService.isPostDelayReport_ = false;
+    uint32_t uid1 = 1001;
+    uint32_t uid2 = 1002;
+    netStatsService.RecordCallingData("GetUidRxBytes", uid1);
+    netStatsService.RecordCallingData("GetUidTxBytes", uid2);
+    EXPECT_EQ(netStatsService.callingRecordSet_.size(), 2u);
+    netStatsService.callingRecordSet_.clear();
+    netStatsService.isPostDelayReport_ = false;
+}
+
+HWTEST_F(NetStatsServiceTest, ReportCallingDataTest001, TestSize.Level1)
+{
+    NetStatsService netStatsService;
+    netStatsService.callingRecordSet_.clear();
+    netStatsService.isPostDelayReport_ = false;
+    netStatsService.ReportCallingData();
+    EXPECT_EQ(netStatsService.callingRecordSet_.size(), 0u);
+    EXPECT_EQ(netStatsService.isPostDelayReport_, false);
+}
+
+HWTEST_F(NetStatsServiceTest, ReportCallingDataTest002, TestSize.Level1)
+{
+    NetStatsService netStatsService;
+    netStatsService.callingRecordSet_.clear();
+    netStatsService.isPostDelayReport_ = false;
+    netStatsService.callingRecordSet_.insert(
+        "{\"uid\":1001,\"bundleName\":\"test\",\"function\":\"GetUidRxBytes\",\"paramUid\":1001}");
+    netStatsService.callingRecordSet_.insert(
+        "{\"uid\":1002,\"bundleName\":\"test\",\"function\":\"GetUidTxBytes\",\"paramUid\":1002}");
+    EXPECT_EQ(netStatsService.callingRecordSet_.size(), 2u);
+    netStatsService.ReportCallingData();
+    EXPECT_EQ(netStatsService.callingRecordSet_.size(), 0u);
+    EXPECT_EQ(netStatsService.isPostDelayReport_, false);
+}
+
+HWTEST_F(NetStatsServiceTest, RecordAndReportCallingDataTest001, TestSize.Level1)
+{
+    NetStatsService netStatsService;
+    netStatsService.callingRecordSet_.clear();
+    netStatsService.isPostDelayReport_ = false;
+    uint32_t uid = 1001;
+    netStatsService.RecordCallingData("GetUidRxBytes", uid);
+    EXPECT_EQ(netStatsService.callingRecordSet_.size(), 1u);
+    EXPECT_EQ(netStatsService.isPostDelayReport_, true);
+    netStatsService.ReportCallingData();
+    EXPECT_EQ(netStatsService.callingRecordSet_.size(), 0u);
+    EXPECT_EQ(netStatsService.isPostDelayReport_, false);
+}
 } // namespace NetManagerStandard
 } // namespace OHOS
