@@ -250,12 +250,15 @@ bool NetManagerCenter::IsAppUidInWhiteList(int32_t callingUid, int32_t appUid)
     return vpnService_->IsAppUidInWhiteList(callingUid, appUid);
 }
 
-bool NetManagerCenter::NotifyAllowConnectVpnBundleNameChanged(std::set<std::string> &&allowConnectVpnBundleName)
+bool NetManagerCenter::NotifyAllowConnectVpnBundleNameChanged(
+    std::set<std::string> &&allowConnectVpnBundleName,
+    std::set<std::string> &&allowVpnStartWithoutCheckPermissions)
 {
     if (vpnService_ == nullptr) {
         return false;
     }
-    vpnService_->NotifyAllowConnectVpnBundleNameChanged(std::move(allowConnectVpnBundleName));
+    vpnService_->NotifyAllowConnectVpnBundleNameChanged(
+        std::move(allowConnectVpnBundleName), std::move(allowVpnStartWithoutCheckPermissions));
     return true;
 }
 } // namespace NetManagerStandard
