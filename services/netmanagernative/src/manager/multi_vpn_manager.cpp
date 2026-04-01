@@ -38,6 +38,7 @@ namespace {
 constexpr uint32_t DEFAULT_MTU = 1500;
 constexpr int32_t NET_MASK_MAX_LENGTH = 32;
 constexpr int32_t MAX_UNIX_SOCKET_CLIENT = 5;
+constexpr int32_t IPV6_MAX_LENGTH = 128;
 } // namespace
 
 int32_t MultiVpnManager::SendVpnInterfaceFdToClient(int32_t clientFd, int32_t tunFd)
@@ -141,7 +142,6 @@ int32_t MultiVpnManager::AddVpnRemoteAddress(const std::string &ifName, std::ato
     /* ppp need set dst ip */
     if (strstr(ifName.c_str(), PPP_CARD_NAME) != NULL) {
         bool isIpv6 = CommonUtils::IsValidIPV6(remoteVpnAddr_);
-
         if (isIpv6) {
             // IPv6 PPP无法通过ioctl设置remote address（内核限制）
             // 返回成功但不设置，避免阻断流程
@@ -171,10 +171,8 @@ int32_t MultiVpnManager::SetVpnAddress(const std::string &ifName, const std::str
     if (InitIfreq(ifr, ifName) != NETMANAGER_SUCCESS) {
         return NETMANAGER_ERROR;
     }
-
     bool isIpv6 = CommonUtils::IsValidIPV6(vpnAddr);
     bool isIpv4 = CommonUtils::IsValidIPV4(vpnAddr);
-
     if (!isIpv4 && !isIpv6) {
         NETNATIVE_LOGE("invalid ip address format: %{public}s", vpnAddr.c_str());
         return NETMANAGER_ERROR;
@@ -463,7 +461,7 @@ int32_t MultiVpnManager::SetVpnAddressIPv6(const std::string &ifName, const std:
         return NETMANAGER_ERROR;
     }
 
-    if (prefix < 0 || prefix > 128) {
+    if (prefix < 0 || prefix > IPV6_MAX_LENGTH) {
         NETNATIVE_LOGE("ipv6 prefix: %{public}d error", prefix);
         return NETMANAGER_ERROR;
     }
