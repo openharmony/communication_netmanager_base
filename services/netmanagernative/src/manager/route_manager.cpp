@@ -393,7 +393,7 @@ int32_t RouteManager::UpdateVpnRules(uint16_t netId, const std::string &interfac
     bool isTunVpn = CheckTunVpnCall(interface);
 
     for (const auto& msg : extMessages) {
-        if (!CommonUtils::IsValidIPV4(msg) && !CommonUtils::IsValidIPV6(msg)) {
+        if (!CommonUtils::IsValidIPV4(msg)) {
             NETNATIVE_LOGE("failed to add update vpn rules on interface of netId, %{public}u.", netId);
             return ROUTEMANAGER_ERROR;
         }
@@ -427,10 +427,8 @@ int32_t RouteManager::UpdateOutcomingIpMark(uint16_t netId, const std::string &a
     ss << "-t mangle " << action << LOCAL_MANGLE_OUTPUT << " -s " << addr
     << " -j MARK --set-mark 0x" << std::nouppercase
     << std::hex << fwmark.intValue;
-    
-    IpType ipType = CommonUtils::IsValidIPV6(addr) ? IPTYPE_IPV6 : IPTYPE_IPV4;
     // need to call IptablesWrapper's RunCommand function.
-    if (IptablesWrapper::GetInstance()->RunCommand(ipType, ss.str()) == ROUTEMANAGER_ERROR) {
+    if (IptablesWrapper::GetInstance()->RunCommand(IPTYPE_IPV4, ss.str()) == ROUTEMANAGER_ERROR) {
         NETNATIVE_LOGE("UpdateOutcomingIpMark error");
         return ROUTEMANAGER_ERROR;
     }
@@ -761,8 +759,7 @@ int32_t RouteManager::EnableDistributedClientNet(const std::string &virNicAddr, 
         NETNATIVE_LOGE("EnableDistributedClientNet UpdateDistributedRule err, error is %{public}d", ret);
         return ret;
     }
-    std::string maskAddr = CommonUtils::GetMaskByLength(DEFAULT_GATEWAY_MASK_MAX_LENGTH);
-    std::string virNicVethAddr = CommonUtils::GetGatewayAddr(virNicAddr, maskAddr);
+    std::string virNicVethAddr = CommonUtils::GetGatewayAddr(virNicAddr, "255.255.255.0");
     if (virNicVethAddr.empty()) {
         NETNATIVE_LOGE("get gateway addr is empty");
         return ROUTEMANAGER_ERROR;
@@ -1121,7 +1118,6 @@ int32_t RouteManager::AddClatTunInterface(const std::string &interfaceName, cons
     networkRouteInfo.ifName = interfaceName;
     networkRouteInfo.destination = dstAddr;
     networkRouteInfo.nextHop = nxtHop;
-    networkRouteInfo.isExcludedRoute = false;
     if (int32_t ret = AddRoute(RouteManager::INTERFACE, networkRouteInfo, routeRepeat)) {
         NETNATIVE_LOGE("AddRoute err, error is %{public}d", ret);
         return ret;
@@ -1222,6 +1218,7 @@ int32_t RouteManager::ClearRules()
 
 int32_t RouteManager::ClearRoutes(const std::string &interfaceName, int32_t netId)
 {
+    std::lock_guard lock(RouteManager::interfaceToTableLock_);
     uint32_t table = FindTableByInterfacename(interfaceName, netId);
     NETNATIVE_LOGI("ClearRoutes--table==:%{public}d", table);
     if (table == RT_TABLE_UNSPEC) {
@@ -1771,7 +1768,6 @@ uint32_t RouteManager::FindTableByInterfacename(const std::string &interfaceName
         return RT_TABLE_UNSPEC;
     }
     table += ROUTE_TABLE_OFFSET_FROM_INDEX;
-    std::lock_guard lock(RouteManager::interfaceToTableLock_);
     interfaceToTable_[interfaceName] = table;
     return ConvertTableByNetId(netId, table);
 }
