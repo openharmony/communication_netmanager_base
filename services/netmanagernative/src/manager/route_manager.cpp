@@ -759,7 +759,8 @@ int32_t RouteManager::EnableDistributedClientNet(const std::string &virNicAddr, 
         NETNATIVE_LOGE("EnableDistributedClientNet UpdateDistributedRule err, error is %{public}d", ret);
         return ret;
     }
-    std::string virNicVethAddr = CommonUtils::GetGatewayAddr(virNicAddr, "255.255.255.0");
+    std::string maskAddr = CommonUtils::GetMaskByLength(DEFAULT_GATEWAY_MASK_MAX_LENGTH);	 
+    std::string virNicVethAddr = CommonUtils::GetGatewayAddr(virNicAddr, maskAddr);
     if (virNicVethAddr.empty()) {
         NETNATIVE_LOGE("get gateway addr is empty");
         return ROUTEMANAGER_ERROR;
@@ -1118,6 +1119,7 @@ int32_t RouteManager::AddClatTunInterface(const std::string &interfaceName, cons
     networkRouteInfo.ifName = interfaceName;
     networkRouteInfo.destination = dstAddr;
     networkRouteInfo.nextHop = nxtHop;
+    networkRouteInfo.isExcludedRoute = false;
     if (int32_t ret = AddRoute(RouteManager::INTERFACE, networkRouteInfo, routeRepeat)) {
         NETNATIVE_LOGE("AddRoute err, error is %{public}d", ret);
         return ret;
@@ -1218,7 +1220,6 @@ int32_t RouteManager::ClearRules()
 
 int32_t RouteManager::ClearRoutes(const std::string &interfaceName, int32_t netId)
 {
-    std::lock_guard lock(RouteManager::interfaceToTableLock_);
     uint32_t table = FindTableByInterfacename(interfaceName, netId);
     NETNATIVE_LOGI("ClearRoutes--table==:%{public}d", table);
     if (table == RT_TABLE_UNSPEC) {
@@ -1768,6 +1769,7 @@ uint32_t RouteManager::FindTableByInterfacename(const std::string &interfaceName
         return RT_TABLE_UNSPEC;
     }
     table += ROUTE_TABLE_OFFSET_FROM_INDEX;
+    std::lock_guard lock(RouteManager::interfaceToTableLock_);
     interfaceToTable_[interfaceName] = table;
     return ConvertTableByNetId(netId, table);
 }
