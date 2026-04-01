@@ -15,14 +15,14 @@
 
 #include "multi_vpn_manager.h"
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <sys/ioctl.h>
 #include <thread>
 #include <linux/ppp_defs.h>
 #include <linux/if_ppp.h>
 #include <linux/if_tun.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
+#include <linux/ipv6.h>
 #include "init_socket.h"
 #include "net_manager_constants.h"
 #include "netmanager_base_common_utils.h"
@@ -38,7 +38,6 @@ namespace {
 constexpr uint32_t DEFAULT_MTU = 1500;
 constexpr int32_t NET_MASK_MAX_LENGTH = 32;
 constexpr int32_t MAX_UNIX_SOCKET_CLIENT = 5;
-constexpr int32_t IPV6_MAX_LENGTH = 128;
 } // namespace
 
 int32_t MultiVpnManager::SendVpnInterfaceFdToClient(int32_t clientFd, int32_t tunFd)
@@ -117,20 +116,20 @@ int32_t MultiVpnManager::SetVpnMtu(const std::string &ifName, int32_t mtu)
     }
     ifr.ifr_mtu = mtu;
 
+    int32_t ret = NETMANAGER_ERROR;
     std::atomic_int net4Sock = socket(AF_INET, SOCK_DGRAM, 0);
-    int32_t ret4 = NETMANAGER_ERROR;
     if (net4Sock >= 0) {
-        ret4 = SetVpnResult(net4Sock, SIOCSIFMTU, ifr);
+        ret = SetVpnResult(net4Sock, SIOCSIFMTU, ifr);
         close(net4Sock);
     }
-    if (ret4 == NETMANAGER_ERROR) {
+    if (ret == NETMANAGER_ERROR) {
         std::atomic_int net6Sock = socket(AF_INET6, SOCK_DGRAM, 0);
         if (net6Sock >= 0) {
-            ret4 = SetVpnResult(net6Sock, SIOCSIFMTU, ifr);
+            ret = SetVpnResult(net6Sock, SIOCSIFMTU, ifr);
             close(net6Sock);
         }
     }
-    if (ret4 == NETMANAGER_ERROR) {
+    if (ret == NETMANAGER_ERROR) {
         NETNATIVE_LOGI("set MTU failed");
         return NETMANAGER_ERROR;
     }
@@ -140,14 +139,17 @@ int32_t MultiVpnManager::SetVpnMtu(const std::string &ifName, int32_t mtu)
 int32_t MultiVpnManager::AddVpnRemoteAddress(const std::string &ifName, std::atomic_int &net4Sock, ifreq &ifr)
 {
     /* ppp need set dst ip */
-    in_addr addrBuf = {};
-    bool isIpv4 = (inet_pton(AF_INET, remoteIpv4Addr_.c_str(), &addrBuf) == 1);
     if (strstr(ifName.c_str(), PPP_CARD_NAME) != NULL) {
-        if (!isIpv4) {
-            NETNATIVE_LOGI("ipv6 remote address set via PPP protocol");
+        bool isIpv6 = CommonUtils::IsValidIPV6(remoteVpnAddr_);
+
+        if (isIpv6) {
+            // IPv6 PPP无法通过ioctl设置remote address（内核限制）
+            // 返回成功但不设置，避免阻断流程
+            NETNATIVE_LOGI("ipv6 remote address set via PPP protocol - not supported via ioctl");
+            return NETMANAGER_SUCCESS;
         } else {
             in_addr remoteIpv4Addr = {};
-            if (inet_aton(remoteIpv4Addr_.c_str(), &remoteIpv4Addr) == 0) {
+            if (inet_aton(remoteVpnAddr_.c_str(), &remoteIpv4Addr) == 0) {
                 NETNATIVE_LOGE("addr inet_aton error");
                 return NETMANAGER_ERROR;
             }
@@ -169,143 +171,20 @@ int32_t MultiVpnManager::SetVpnAddress(const std::string &ifName, const std::str
     if (InitIfreq(ifr, ifName) != NETMANAGER_SUCCESS) {
         return NETMANAGER_ERROR;
     }
-    in6_addr addrBuf = {};
-    bool isIpv6 = (inet_pton(AF_INET6, vpnAddr.c_str(), &addrBuf) == 1);
+
+    bool isIpv6 = CommonUtils::IsValidIPV6(vpnAddr);
+    bool isIpv4 = CommonUtils::IsValidIPV4(vpnAddr);
+
+    if (!isIpv4 && !isIpv6) {
+        NETNATIVE_LOGE("invalid ip address format: %{public}s", vpnAddr.c_str());
+        return NETMANAGER_ERROR;
+    }
+
     if (isIpv6) {
         return SetVpnAddressIPv6(ifName, vpnAddr, prefix);
     } else {
         return SetVpnAddressIPv4(ifName, vpnAddr, prefix, ifr);
     }
-}
-
-int32_t MultiVpnManager::SetVpnAddressIPv6(const std::string &ifName, const std::string &vpnAddr, int32_t prefix)
-{
-    std::atomic_int net6Sock = socket(AF_INET6, SOCK_DGRAM, 0);
-    if (net6Sock < 0) {
-        NETNATIVE_LOGE("create SOCK_DGRAM ipv6 failed: %{public}d", errno);
-        return NETMANAGER_ERROR;
-    }
-
-    char addrbuf[sizeof(in6_addr)] = {0};
-    if (inet_pton(AF_INET6, vpnAddr.c_str(), addrbuf) != 1) {
-        NETNATIVE_LOGE("ipv6 addr inet_pton error");
-        close(net6Sock);
-        return NETMANAGER_ERROR;
-    }
-
-    if (prefix < 0 || prefix > IPV6_MAX_LENGTH) {
-        NETNATIVE_LOGE("ipv6 prefix: %{public}d error", prefix);
-        close(net6Sock);
-        return NETMANAGER_ERROR;
-    }
-
-    ifreq ifr = {};
-    if (InitIfreq(ifr, ifName) != NETMANAGER_SUCCESS) {
-        close(net6Sock);
-        return NETMANAGER_ERROR;
-    }
-
-    uint32_t ifindex = 0;
-    if (ioctl(net6Sock, SIOCGIFINDEX, &ifr) < 0) {
-        NETNATIVE_LOGE("get ifindex failed: %{public}d", errno);
-        close(net6Sock);
-        return NETMANAGER_ERROR;
-    }
-    ifindex = ifr.ifr_ifindex;
-
-    close(net6Sock);
-    return SetVpnAddressIPv6Netlink(ifName, vpnAddr, prefix, ifindex);
-}
-
-// LCOV_EXCL_START
-int32_t MultiVpnManager::SetVpnAddressIPv6Netlink(const std::string &ifName,
-    const std::string &vpnAddr, int32_t prefix, uint32_t ifindex)
-{
-    char addrbuf[sizeof(in6_addr)] = {0};
-    if (inet_pton(AF_INET6, vpnAddr.c_str(), addrbuf) != 1) {
-        NETNATIVE_LOGE("ipv6 addr inet_pton error");
-        return NETMANAGER_ERROR;
-    }
-
-    constexpr size_t kMaxMsgLen = 4096;
-    nmd::NetlinkMsg netMsg(NLM_F_CREATE | NLM_F_EXCL, kMaxMsgLen, getpid());
-
-    ifaddrmsg ifa {};
-    ifa.ifa_family = AF_INET6;
-    ifa.ifa_prefixlen = static_cast<uint8_t>(prefix);
-    ifa.ifa_flags = IFA_F_PERMANENT;
-    ifa.ifa_scope = 0;
-    ifa.ifa_index = ifindex;
-
-    netMsg.AddAddress(RTM_NEWADDR, ifa);
-
-    int addrLen = 16;
-    int32_t resultLocal = netMsg.AddAttr(IFA_LOCAL, const_cast<char*>(addrbuf), addrLen);
-    int32_t resultAddress = netMsg.AddAttr(IFA_ADDRESS, const_cast<char*>(addrbuf), addrLen);
-    if (resultLocal < 0 || resultAddress < 0) {
-        NETNATIVE_LOGE("AddAttr failed");
-        return NETMANAGER_ERROR;
-    }
-
-    int32_t ret = nmd::SendNetlinkMsgToKernel(netMsg.GetNetLinkMessage(), 0);
-    if (ret != NETMANAGER_SUCCESS) {
-        NETNATIVE_LOGE("set ipv6 address failed");
-        return NETMANAGER_ERROR;
-    }
-
-    SetVpnUp(ifName);
-    NETNATIVE_LOGI("set ipv6 address success");
-    return NETMANAGER_SUCCESS;
-}
-// LCOV_EXCL_STOP
-
-int32_t MultiVpnManager::SetVpnAddressIPv4(const std::string &ifName,
-    const std::string &vpnAddr, int32_t prefix, ifreq &ifr)
-{
-    std::atomic_int net4Sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (net4Sock < 0) {
-        NETNATIVE_LOGE("create SOCK_DGRAM ipv4 failed: %{public}d", errno);
-        return NETMANAGER_ERROR;
-    }
-    in_addr ipv4Addr = {};
-    if (inet_aton(vpnAddr.c_str(), &ipv4Addr) == 0) {
-        NETNATIVE_LOGE("addr inet_aton error");
-        close(net4Sock);
-        return NETMANAGER_ERROR;
-    }
-
-    auto sin = reinterpret_cast<sockaddr_in *>(&ifr.ifr_addr);
-    sin->sin_family = AF_INET;
-    sin->sin_addr = ipv4Addr;
-    if (ioctl(net4Sock, SIOCSIFADDR, &ifr) < 0) {
-        NETNATIVE_LOGE("ioctl set ipv4 address failed: %{public}d", errno);
-        close(net4Sock);
-        return NETMANAGER_ERROR;
-    }
-    /* ppp need set dst ip */
-    if (AddVpnRemoteAddress(ifName, net4Sock, ifr) != NETMANAGER_SUCCESS) {
-        close(net4Sock);
-        return NETMANAGER_ERROR;
-    }
-    if (prefix <= 0 || prefix > NET_MASK_MAX_LENGTH) {
-        NETNATIVE_LOGE("prefix: %{public}d error", prefix);
-        close(net4Sock);
-        return NETMANAGER_ERROR;
-    }
-    in_addr_t mask = prefix ? (~0 << (NET_MASK_MAX_LENGTH - prefix)) : 0;
-    sin = reinterpret_cast<sockaddr_in *>(&ifr.ifr_netmask);
-    sin->sin_family = AF_INET;
-    sin->sin_addr.s_addr = htonl(mask);
-    if (ioctl(net4Sock, SIOCSIFNETMASK, &ifr) < 0) {
-        NETNATIVE_LOGE("ioctl set ip mask failed: %{public}d", errno);
-        close(net4Sock);
-        return NETMANAGER_ERROR;
-    }
-
-    SetVpnUp(ifName);
-    close(net4Sock);
-    NETNATIVE_LOGI("set ipv4 address success");
-    return NETMANAGER_SUCCESS;
 }
 
 int32_t MultiVpnManager::SetVpnUp(const std::string &ifName)
@@ -373,7 +252,7 @@ int32_t MultiVpnManager::CreateVpnInterface(const std::string &ifName)
     } else if (strstr(ifName.c_str(), PPP_CARD_NAME) != NULL) {
         ret = CreatePppInterface(ifName);
     } else if ((strstr(ifName.c_str(), MULTI_TUN_CARD_NAME) != NULL) ||
-        (strstr(ifName.c_str(), INNER_CHL_NAME) != NULL)) {
+               (strstr(ifName.c_str(), INNER_CHL_NAME) != NULL)) {
         ret = CreateMultiTunInterface(ifName);
     } else {
         NETNATIVE_LOGE("CreateVpnInterface failed, invalid ifName");
@@ -418,51 +297,6 @@ int32_t MultiVpnManager::CreatePppInterface(const std::string &ifName)
     return RenameInterface(oldName, ifName);
 }
 
-int32_t MultiVpnManager::RenameInterface(const std::string &oldName, const std::string &newName)
-{
-    ifreq ifr = {};
-    if (memset_s(&ifr, sizeof(ifr), 0, sizeof(ifr)) != EOK) {
-        NETNATIVE_LOGE("memset_s ifr failed!");
-        return NETMANAGER_ERROR;
-    }
-    if (strncpy_s(ifr.ifr_name, IFNAMSIZ, oldName.c_str(), strlen(oldName.c_str())) != EOK) {
-        NETNATIVE_LOGE("strcpy_s ifr name fail");
-        return NETMANAGER_ERROR;
-    }
-    ifr.ifr_name[IFNAMSIZ - 1] = '\0';
-    if (strncpy_s(ifr.ifr_newname, IFNAMSIZ, newName.c_str(), strlen(newName.c_str())) != EOK) {
-        NETNATIVE_LOGE("strcpy_s ifr name fail");
-        return NETMANAGER_ERROR;
-    }
-    ifr.ifr_newname[IFNAMSIZ - 1] = '\0';
-    int32_t ret = NETMANAGER_ERROR;
-
-    std::atomic_int net4Sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (net4Sock >= 0) {
-        int32_t ioRet = ioctl(net4Sock, SIOCSIFNAME, &ifr);
-        close(net4Sock);
-        if (ioRet >= 0) {
-            ret = NETMANAGER_SUCCESS;
-        }
-    }
-    if (ret == NETMANAGER_ERROR) {
-        std::atomic_int net6Sock = socket(AF_INET6, SOCK_DGRAM, 0);
-        if (net6Sock >= 0) {
-            int32_t ioRet = ioctl(net6Sock, SIOCSIFNAME, &ifr);
-            close(net6Sock);
-            if (ioRet >= 0) {
-                ret = NETMANAGER_SUCCESS;
-            }
-        }
-    }
-    if (ret == NETMANAGER_ERROR) {
-        NETNATIVE_LOGE("ioctl failed errno: %{public}d", errno);
-        return NETMANAGER_ERROR;
-    }
-    NETNATIVE_LOGI("Created PPP interface");
-    return NETMANAGER_SUCCESS;
-}
-
 void MultiVpnManager::CreatePppFd(const std::string &ifName)
 {
     if (strstr(ifName.c_str(), PPP_CARD_NAME) == NULL) {
@@ -475,8 +309,7 @@ void MultiVpnManager::CreatePppFd(const std::string &ifName)
 
 void MultiVpnManager::ClearPppFd(const std::string &connectName)
 {
-    if (strstr(connectName.c_str(), L2TP_NAME) == NULL ||
-        connectName.substr(0, strlen(L2TP_NAME)) != L2TP_NAME) {
+    if (strstr(connectName.c_str(), L2TP_NAME) == NULL || connectName.substr(0, strlen(L2TP_NAME)) != L2TP_NAME) {
         NETNATIVE_LOGE("ClearPppFd failed, not valid l2tp connection");
         return;
     }
@@ -529,7 +362,7 @@ int32_t MultiVpnManager::GetMultiVpnFd(const std::string &ifName, int32_t &multi
     if (strstr(ifName.c_str(), PPP_CARD_NAME) != NULL) {
         multiVpnFd = open(PPP_DEVICE_PATH, O_RDWR | O_NONBLOCK | O_CLOEXEC);
     } else if ((strstr(ifName.c_str(), MULTI_TUN_CARD_NAME) != NULL) ||
-        (strstr(ifName.c_str(), INNER_CHL_NAME) != NULL)) {
+               (strstr(ifName.c_str(), INNER_CHL_NAME) != NULL)) {
         multiVpnFd = open(TUN_DEVICE_PATH, O_RDWR | O_NONBLOCK | O_CLOEXEC);
     } else {
         NETNATIVE_LOGE("GetMultiVpnFd faild, IfName err");
@@ -545,14 +378,13 @@ int32_t MultiVpnManager::GetMultiVpnFd(const std::string &ifName, int32_t &multi
 
 void MultiVpnManager::SetVpnRemoteAddress(const std::string &remoteIp)
 {
-    remoteIpv4Addr_ = remoteIp;
+    remoteVpnAddr_ = remoteIp;
 }
 
 int32_t MultiVpnManager::DestroyMultiVpnFd(const std::string &ifName)
 {
     std::lock_guard<std::mutex> autoLock(mutex_);
-    if (strstr(ifName.c_str(), PPP_CARD_NAME) == NULL &&
-        strstr(ifName.c_str(), MULTI_TUN_CARD_NAME) == NULL &&
+    if (strstr(ifName.c_str(), PPP_CARD_NAME) == NULL && strstr(ifName.c_str(), MULTI_TUN_CARD_NAME) == NULL &&
         strstr(ifName.c_str(), INNER_CHL_NAME) == NULL) {
         NETNATIVE_LOGE("DestroyMultiVpnFd faild, IfName err");
         return NETMANAGER_ERROR;
@@ -621,6 +453,158 @@ int32_t MultiVpnManager::SetVpnCallMode(const std::string &message)
         return NETMANAGER_ERROR;
     }
     return nmd::RouteManager::SetVpnCallMode(message);
+}
+
+int32_t MultiVpnManager::SetVpnAddressIPv6(const std::string &ifName, const std::string &vpnAddr, int32_t prefix)
+{
+    char addrbuf[sizeof(in6_addr)] = {0};
+    if (inet_pton(AF_INET6, vpnAddr.c_str(), addrbuf) != 1) {
+        NETNATIVE_LOGE("ipv6 addr inet_pton error");
+        return NETMANAGER_ERROR;
+    }
+
+    if (prefix < 0 || prefix > 128) {
+        NETNATIVE_LOGE("ipv6 prefix: %{public}d error", prefix);
+        return NETMANAGER_ERROR;
+    }
+
+    std::atomic_int net6Sock = socket(AF_INET6, SOCK_DGRAM, 0);
+    if (net6Sock < 0) {
+        NETNATIVE_LOGE("create SOCK_DGRAM ipv6 failed: %{public}d", errno);
+        return NETMANAGER_ERROR;
+    }
+
+    ifreq ifr = {};
+    if (InitIfreq(ifr, ifName) != NETMANAGER_SUCCESS) {
+        close(net6Sock);
+        return NETMANAGER_ERROR;
+    }
+
+    uint32_t ifindex = 0;
+    if (ioctl(net6Sock, SIOCGIFINDEX, &ifr) < 0) {
+        NETNATIVE_LOGE("get ifindex failed: %{public}d", errno);
+        close(net6Sock);
+        return NETMANAGER_ERROR;
+    }
+    ifindex = ifr.ifr_ifindex;
+
+    struct in6_ifreq ifr6 = {};
+    ifr6.ifr6_prefixlen = static_cast<uint32_t>(prefix);
+    ifr6.ifr6_ifindex = ifindex;
+
+    if (inet_pton(AF_INET6, vpnAddr.c_str(), &ifr6.ifr6_addr) != 1) {
+        NETNATIVE_LOGE("inet_pton ipv6 address failed");
+        close(net6Sock);
+        return NETMANAGER_ERROR;
+    }
+
+    if (ioctl(net6Sock, SIOCSIFADDR, &ifr6) < 0) {
+        NETNATIVE_LOGE("ioctl set ipv6 address failed: %{public}d", errno);
+        close(net6Sock);
+        return NETMANAGER_ERROR;
+    }
+
+    SetVpnUp(ifName);
+    close(net6Sock);
+    NETNATIVE_LOGI("set ipv6 address success");
+    return NETMANAGER_SUCCESS;
+}
+
+int32_t MultiVpnManager::SetVpnAddressIPv4(const std::string &ifName, const std::string &vpnAddr, int32_t prefix,
+                                           ifreq &ifr)
+{
+    std::atomic_int net4Sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (net4Sock < 0) {
+        NETNATIVE_LOGE("create SOCK_DGRAM ipv4 failed: %{public}d", errno);
+        return NETMANAGER_ERROR;
+    }
+
+    in_addr ipv4Addr = {};
+    if (inet_aton(vpnAddr.c_str(), &ipv4Addr) == 0) {
+        NETNATIVE_LOGE("addr inet_aton error");
+        close(net4Sock);
+        return NETMANAGER_ERROR;
+    }
+
+    auto sin = reinterpret_cast<sockaddr_in *>(&ifr.ifr_addr);
+    sin->sin_family = AF_INET;
+    sin->sin_addr = ipv4Addr;
+    if (ioctl(net4Sock, SIOCSIFADDR, &ifr) < 0) {
+        NETNATIVE_LOGE("ioctl set ipv4 address failed: %{public}d", errno);
+        close(net4Sock);
+        return NETMANAGER_ERROR;
+    }
+
+    if (AddVpnRemoteAddress(ifName, net4Sock, ifr) != NETMANAGER_SUCCESS) {
+        close(net4Sock);
+        return NETMANAGER_ERROR;
+    }
+
+    if (prefix <= 0 || prefix > NET_MASK_MAX_LENGTH) {
+        NETNATIVE_LOGE("prefix: %{public}d error", prefix);
+        close(net4Sock);
+        return NETMANAGER_ERROR;
+    }
+    in_addr_t mask = prefix ? (~0 << (NET_MASK_MAX_LENGTH - prefix)) : 0;
+    sin = reinterpret_cast<sockaddr_in *>(&ifr.ifr_netmask);
+    sin->sin_family = AF_INET;
+    sin->sin_addr.s_addr = htonl(mask);
+    if (ioctl(net4Sock, SIOCSIFNETMASK, &ifr) < 0) {
+        NETNATIVE_LOGE("ioctl set ip mask failed: %{public}d", errno);
+        close(net4Sock);
+        return NETMANAGER_ERROR;
+    }
+
+    SetVpnUp(ifName);
+    close(net4Sock);
+    NETNATIVE_LOGI("set ipv4 address success");
+    return NETMANAGER_SUCCESS;
+}
+
+int32_t MultiVpnManager::RenameInterface(const std::string &oldName, const std::string &newName)
+{
+    ifreq ifr = {};
+    if (memset_s(&ifr, sizeof(ifr), 0, sizeof(ifr)) != EOK) {
+        NETNATIVE_LOGE("memset_s ifr failed!");
+        return NETMANAGER_ERROR;
+    }
+    if (strncpy_s(ifr.ifr_name, IFNAMSIZ, oldName.c_str(), strlen(oldName.c_str())) != EOK) {
+        NETNATIVE_LOGE("strcpy_s ifr name fail");
+        return NETMANAGER_ERROR;
+    }
+    ifr.ifr_name[IFNAMSIZ - 1] = '\0';
+    if (strncpy_s(ifr.ifr_newname, IFNAMSIZ, newName.c_str(), strlen(newName.c_str())) != EOK) {
+        NETNATIVE_LOGE("strcpy_s ifr name fail");
+        return NETMANAGER_ERROR;
+    }
+    ifr.ifr_newname[IFNAMSIZ - 1] = '\0';
+
+    int32_t ret = NETMANAGER_ERROR;
+    std::atomic_int net4Sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (net4Sock >= 0) {
+        int32_t ioRet = ioctl(net4Sock, SIOCSIFNAME, &ifr);
+        close(net4Sock);
+        if (ioRet >= 0) {
+            ret = NETMANAGER_SUCCESS;
+        }
+    }
+
+    if (ret == NETMANAGER_ERROR) {
+        std::atomic_int net6Sock = socket(AF_INET6, SOCK_DGRAM, 0);
+        if (net6Sock >= 0) {
+            int32_t ioRet = ioctl(net6Sock, SIOCSIFNAME, &ifr);
+            close(net6Sock);
+            if (ioRet >= 0) {
+                ret = NETMANAGER_SUCCESS;
+            }
+        }
+    }
+
+    if (ret == NETMANAGER_ERROR) {
+        NETNATIVE_LOGE("ioctl failed errno: %{public}d", errno);
+        return NETMANAGER_ERROR;
+    }
+    return NETMANAGER_SUCCESS;
 }
 } // namespace NetManagerStandard
 } // namespace OHOS
