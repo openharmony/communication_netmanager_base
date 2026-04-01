@@ -474,6 +474,7 @@ HWTEST_F(NetStatsServiceTest, NotifyTrafficAlertFfrtTest001, TestSize.Level1)
     NetStatsService netStatsService;
     int32_t simId = 1;
     uint8_t flag = 2;
+    netStatsService.trafficPlanFfrtQueue_ = std::make_shared<ffrt::queue>("TrafficPlanStatistic");
     bool ret = netStatsService.NotifyTrafficAlertFfrt(simId, flag);
     EXPECT_EQ(ret, 0);
 
