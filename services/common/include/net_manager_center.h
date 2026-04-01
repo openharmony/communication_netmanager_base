@@ -67,7 +67,9 @@ public:
     bool IsVpnApplication(int32_t uid);
     bool IsAppUidInWhiteList(int32_t callingUid, int32_t appUid);
     void RegisterVpnService(const std::shared_ptr<NetVpnBaseService> &service);
-    bool NotifyAllowConnectVpnBundleNameChanged(std::set<std::string> &&allowConnectVpnBundleName);
+    bool NotifyAllowConnectVpnBundleNameChanged(
+        std::set<std::string> &&allowConnectVpnBundleName,
+        std::set<std::string> &&allowVpnStartWithoutCheckPermissions);
 
 private:
     sptr<NetConnBaseService> connService_ = nullptr;
