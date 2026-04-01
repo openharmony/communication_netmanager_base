@@ -21,6 +21,7 @@
 #include "net_stats_cached.h"
 #include "net_stats_utils.h"
 #include "net_stats_service.h"
+#include "ffrt_inner.h"
  
 namespace OHOS {
 namespace NetManagerStandard {
@@ -54,7 +55,11 @@ int32_t NetInfoObserver::NetConnectionPropertiesChange(sptr<NetHandle> &netHandl
         return 0;
     }
     ident_ = info->ident_;
-    DelayedSingleton<NetStatsService>::GetInstance()->ProcessDefaultSimIdChanged(info->ident_);
+    auto simId = info->ident_;
+    auto task = [simId]() {
+        DelayedSingleton<NetStatsService>::GetInstance()->ProcessDefaultSimIdChanged(simId);
+    };
+    ffrt::submit(std::move(task), {}, {}, ffrt::task_attr().name("ProcessDefaultSimIdChanged"));
     return 0;
 }
  
