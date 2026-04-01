@@ -57,7 +57,6 @@ public:
 
 private:
     std::shared_mutex mutexForListenersAndEmitByUv_;
-    std::mutex mutexForEmitAndEmitByUv_;
     std::list<EventListener> listeners_;
     void *data_ = nullptr;
     napi_ref ref_ = nullptr;
