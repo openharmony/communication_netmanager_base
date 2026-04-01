@@ -759,7 +759,7 @@ int32_t RouteManager::EnableDistributedClientNet(const std::string &virNicAddr, 
         NETNATIVE_LOGE("EnableDistributedClientNet UpdateDistributedRule err, error is %{public}d", ret);
         return ret;
     }
-    std::string maskAddr = CommonUtils::GetMaskByLength(DEFAULT_GATEWAY_MASK_MAX_LENGTH);	 
+    std::string maskAddr = CommonUtils::GetMaskByLength(DEFAULT_GATEWAY_MASK_MAX_LENGTH);
     std::string virNicVethAddr = CommonUtils::GetGatewayAddr(virNicAddr, maskAddr);
     if (virNicVethAddr.empty()) {
         NETNATIVE_LOGE("get gateway addr is empty");
