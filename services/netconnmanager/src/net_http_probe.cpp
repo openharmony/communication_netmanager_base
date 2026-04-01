@@ -721,7 +721,7 @@ int32_t NetHttpProbe::CheckSuccessRespCode(int32_t respCode)
     }
     std::string requestId = GetHeaderField(xReqId_);
     // LCOV_EXCL_START
-    if (xReqIdLen_ == -1) {
+    if (xReqIdLen_ < 0) {
         NETMGR_LOG_I("xReqIdLen: %{public}d", xReqIdLen_);
         return result;
     }
