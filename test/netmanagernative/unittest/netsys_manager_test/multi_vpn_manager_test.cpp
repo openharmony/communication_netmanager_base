@@ -85,7 +85,7 @@ HWTEST_F(MultiVpnManagerTest, VpnManagerBranchTest001, TestSize.Level1)
     result = MultiVpnManager::GetInstance().SetVpnAddress(ifName, ipAddr, testNumber);
     EXPECT_EQ(result, NETMANAGER_ERROR);
 
-    result = MultiVpnManager::GetInstance().SetVpnUp(TEST_XFRM_CARD_NAME);
+    result = MultiVpnManager::GetInstance().SetVpnUp(TEST_XFRM_CARD_NAME, false);
     EXPECT_TRUE(result == NETMANAGER_SUCCESS || result == NETMANAGER_ERROR);
 
     result = MultiVpnManager::GetInstance().SetVpnDown(TEST_XFRM_CARD_NAME);
@@ -183,7 +183,7 @@ HWTEST_F(MultiVpnManagerTest, SetVpnAddressTest003, TestSize.Level1)
     auto result = multiVpnManager.SetVpnAddress(ifName, ipAddr, prefix);
     EXPECT_TRUE(result == NETMANAGER_SUCCESS || result == NETMANAGER_ERROR);
     ifName = TEST_PPP_CARD_NAME;
-    multiVpnManager.remoteVpnAddr_ = "";
+    multiVpnManager.remoteIpv4Addr_ = "";
     result = multiVpnManager.SetVpnAddress(ifName, ipAddr, prefix);
     EXPECT_EQ(result, NETMANAGER_ERROR);
 }
@@ -217,7 +217,7 @@ HWTEST_F(MultiVpnManagerTest, SetMultiVpnUp001, TestSize.Level1)
 {
     MultiVpnManager multiVpnManager;
     std::string cardName = "12345678901234567890";
-    auto result = multiVpnManager.SetVpnUp(cardName);
+    auto result = multiVpnManager.SetVpnUp(cardName, false);
     EXPECT_EQ(result, NETMANAGER_ERROR);
 }
 
@@ -225,7 +225,7 @@ HWTEST_F(MultiVpnManagerTest, SetMultiVpnUp002, TestSize.Level1)
 {
     MultiVpnManager multiVpnManager;
     std::string cardName = TEST_XFRM_CARD_NAME;
-    auto result = multiVpnManager.SetVpnUp(TEST_XFRM_CARD_NAME);
+    auto result = multiVpnManager.SetVpnUp(TEST_XFRM_CARD_NAME, false);
     EXPECT_TRUE(result == NETMANAGER_SUCCESS || result == NETMANAGER_ERROR);
 }
 
@@ -300,7 +300,7 @@ HWTEST_F(MultiVpnManagerTest, AddVpnRemoteAddress001, TestSize.Level1)
     std::string cardName = TEST_PPP_CARD_NAME;
     auto result = multiVpnManager.AddVpnRemoteAddress(cardName, net4Sock, ifr);
     EXPECT_EQ(result, NETMANAGER_ERROR);
-    multiVpnManager.remoteVpnAddr_ = "192.168.1.20";
+    multiVpnManager.remoteIpv4Addr_ = "192.168.1.20";
     result = multiVpnManager.AddVpnRemoteAddress(cardName, net4Sock, ifr);
     EXPECT_EQ(result, NETMANAGER_ERROR);
 }
@@ -375,47 +375,133 @@ HWTEST_F(MultiVpnManagerTest, ClearPppFd001, TestSize.Level1)
     EXPECT_EQ(result, NETMANAGER_ERROR);
 }
 
-HWTEST_F(MultiVpnManagerTest, SetVpnAddressIPv6Test001, TestSize.Level1)
+HWTEST_F(MultiVpnManagerTest, SetVpnAddressWithIPv6Test001, TestSize.Level1)
+{
+    MultiVpnManager multiVpnManager;
+    std::string ifName = "12345678901234567890";
+    std::string ipAddr = "2001:db8:85a3::8a2e:370:7334";
+    int32_t prefix = 64;
+    auto result = multiVpnManager.SetVpnAddress(ifName, ipAddr, prefix);
+    EXPECT_EQ(result, NETMANAGER_ERROR);
+}
+
+HWTEST_F(MultiVpnManagerTest, SetVpnAddressWithIPv6Test002, TestSize.Level1)
+{
+    MultiVpnManager multiVpnManager;
+    std::string ifName = "12345678901234567890";
+    std::string ipAddr = "";
+    int32_t prefix = 64;
+    auto result = multiVpnManager.SetVpnAddress(ifName, ipAddr, prefix);
+    EXPECT_EQ(result, NETMANAGER_ERROR);
+}
+
+HWTEST_F(MultiVpnManagerTest, SetVpnAddressWithIPv6Test003, TestSize.Level1)
 {
     MultiVpnManager multiVpnManager;
     std::string ifName = TEST_XFRM_CARD_NAME;
-    std::string ipAddr = "2001:db8::1";
+    std::string ipAddr = "2001:db8:85a3::8a2e:370:7334";
     int32_t prefix = 64;
     auto result = multiVpnManager.SetVpnAddress(ifName, ipAddr, prefix);
     EXPECT_TRUE(result == NETMANAGER_SUCCESS || result == NETMANAGER_ERROR);
 }
 
-HWTEST_F(MultiVpnManagerTest, SetVpnAddressIPv6Test006, TestSize.Level1)
+HWTEST_F(MultiVpnManagerTest, SetVpnAddressWithIPv6Test004, TestSize.Level1)
 {
     MultiVpnManager multiVpnManager;
     std::string ifName = TEST_XFRM_CARD_NAME;
-    std::string ipAddr = "2001:db8::1";
-    int32_t prefix = 0;
-    auto result = multiVpnManager.SetVpnAddress(ifName, ipAddr, prefix);
-    EXPECT_TRUE(result == NETMANAGER_SUCCESS || result == NETMANAGER_ERROR);
-}
-
-HWTEST_F(MultiVpnManagerTest, SetVpnAddressIPv6Test007, TestSize.Level1)
-{
-    MultiVpnManager multiVpnManager;
-    std::string ifName = TEST_XFRM_CARD_NAME;
-    std::string ipAddr = "2001:db8::1";
-    int32_t prefix = 128;
-    auto result = multiVpnManager.SetVpnAddress(ifName, ipAddr, prefix);
-    EXPECT_TRUE(result == NETMANAGER_SUCCESS || result == NETMANAGER_ERROR);
-}
-
-HWTEST_F(MultiVpnManagerTest, SetVpnAddressIPv6Test008, TestSize.Level1)
-{
-    MultiVpnManager multiVpnManager;
-    std::string ifName = TEST_XFRM_CARD_NAME;
-    std::string ipAddr = "2001:db8::1";
+    std::string ipAddr = "2001:db8:85a3::8a2e:370:7334";
     int32_t prefix = 129;
     auto result = multiVpnManager.SetVpnAddress(ifName, ipAddr, prefix);
     EXPECT_EQ(result, NETMANAGER_ERROR);
 }
 
-HWTEST_F(MultiVpnManagerTest, SetVpnMtuIPv6001, TestSize.Level1)
+HWTEST_F(MultiVpnManagerTest, SetVpnAddressWithIPv6Test005, TestSize.Level1)
+{
+    MultiVpnManager multiVpnManager;
+    std::string ifName = TEST_XFRM_CARD_NAME;
+    std::string ipAddr = "2001:db8:85a3::8a2e:370:7334";
+    int32_t prefix = -1;
+    auto result = multiVpnManager.SetVpnAddress(ifName, ipAddr, prefix);
+    EXPECT_EQ(result, NETMANAGER_ERROR);
+}
+
+HWTEST_F(MultiVpnManagerTest, SetVpnAddressInvalidIPFormatTest, TestSize.Level1)
+{
+    MultiVpnManager multiVpnManager;
+    std::string ifName = TEST_XFRM_CARD_NAME;
+    std::string ipAddr = "invalid_ip_address";
+    int32_t prefix = 24;
+    auto result = multiVpnManager.SetVpnAddress(ifName, ipAddr, prefix);
+    EXPECT_EQ(result, NETMANAGER_ERROR);
+}
+
+HWTEST_F(MultiVpnManagerTest, SetVpnAddressIPv6Prefix128Test, TestSize.Level1)
+{
+    MultiVpnManager multiVpnManager;
+    std::string ifName = TEST_XFRM_CARD_NAME;
+    std::string ipAddr = "2001:db8:85a3::8a2e:370:7334";
+    int32_t prefix = 128;
+    auto result = multiVpnManager.SetVpnAddress(ifName, ipAddr, prefix);
+    EXPECT_TRUE(result == NETMANAGER_SUCCESS || result == NETMANAGER_ERROR);
+}
+
+HWTEST_F(MultiVpnManagerTest, SetVpnAddressIPv6Prefix0Test, TestSize.Level1)
+{
+    MultiVpnManager multiVpnManager;
+    std::string ifName = TEST_XFRM_CARD_NAME;
+    std::string ipAddr = "2001:db8:85a3::8a2e:370:7334";
+    int32_t prefix = 0;
+    auto result = multiVpnManager.SetVpnAddress(ifName, ipAddr, prefix);
+    EXPECT_TRUE(result == NETMANAGER_SUCCESS || result == NETMANAGER_ERROR);
+}
+
+HWTEST_F(MultiVpnManagerTest, SetVpnAddressIPv4ValidFormatTest, TestSize.Level1)
+{
+    MultiVpnManager multiVpnManager;
+    std::string ifName = TEST_XFRM_CARD_NAME;
+    std::string ipAddr = "10.0.0.1";
+    int32_t prefix = 24;
+    auto result = multiVpnManager.SetVpnAddress(ifName, ipAddr, prefix);
+    EXPECT_TRUE(result == NETMANAGER_SUCCESS || result == NETMANAGER_ERROR);
+}
+
+HWTEST_F(MultiVpnManagerTest, SetVpnAddressIPv4InvalidPrefixTest, TestSize.Level1)
+{
+    MultiVpnManager multiVpnManager;
+    std::string ifName = TEST_XFRM_CARD_NAME;
+    std::string ipAddr = "10.0.0.1";
+    int32_t prefix = 33;
+    auto result = multiVpnManager.SetVpnAddress(ifName, ipAddr, prefix);
+    EXPECT_EQ(result, NETMANAGER_ERROR);
+}
+
+HWTEST_F(MultiVpnManagerTest, SetVpnAddressIPv4Prefix0Test, TestSize.Level1)
+{
+    MultiVpnManager multiVpnManager;
+    std::string ifName = TEST_XFRM_CARD_NAME;
+    std::string ipAddr = "10.0.0.1";
+    int32_t prefix = 0;
+    auto result = multiVpnManager.SetVpnAddress(ifName, ipAddr, prefix);
+    EXPECT_EQ(result, NETMANAGER_ERROR);
+}
+
+HWTEST_F(MultiVpnManagerTest, SetVpnUpWithIPv6Test, TestSize.Level1)
+{
+    MultiVpnManager multiVpnManager;
+    std::string cardName = "12345678901234567890";
+    auto result = multiVpnManager.SetVpnUp(cardName, true);
+    EXPECT_EQ(result, NETMANAGER_ERROR);
+}
+
+HWTEST_F(MultiVpnManagerTest, SetVpnUpWithIPv4Test, TestSize.Level1)
+{
+    MultiVpnManager multiVpnManager;
+    std::string cardName = "12345678901234567890";
+    auto result = multiVpnManager.SetVpnUp(cardName, false);
+    EXPECT_EQ(result, NETMANAGER_ERROR);
+}
+
+HWTEST_F(MultiVpnManagerTest, SetVpnMtuSuccessIPv4Test, TestSize.Level1)
 {
     MultiVpnManager multiVpnManager;
     std::string ifName = TEST_XFRM_CARD_NAME;
@@ -424,32 +510,73 @@ HWTEST_F(MultiVpnManagerTest, SetVpnMtuIPv6001, TestSize.Level1)
     EXPECT_TRUE(result == NETMANAGER_SUCCESS || result == NETMANAGER_ERROR);
 }
 
-HWTEST_F(MultiVpnManagerTest, SetVpnUpIPv6001, TestSize.Level1)
+HWTEST_F(MultiVpnManagerTest, SetVpnMtuInvalidIfNameTest, TestSize.Level1)
+{
+    MultiVpnManager multiVpnManager;
+    std::string ifName = "12345678901234567890";
+    int32_t mtu = 1500;
+    auto result = multiVpnManager.SetVpnMtu(ifName, mtu);
+    EXPECT_EQ(result, NETMANAGER_ERROR);
+}
+
+HWTEST_F(MultiVpnManagerTest, SetVpnAddressIPv6Private001, TestSize.Level1)
+{
+    MultiVpnManager multiVpnManager;
+    std::string ifName = "12345678901234567890";
+    std::string ipAddr = "2001:db8:85a3::8a2e:370:7334";
+    int32_t prefix = 64;
+    auto result = multiVpnManager.SetVpnAddressIPv6(ifName, ipAddr, prefix);
+    EXPECT_EQ(result, NETMANAGER_ERROR);
+}
+
+HWTEST_F(MultiVpnManagerTest, SetVpnAddressIPv6Private002, TestSize.Level1)
 {
     MultiVpnManager multiVpnManager;
     std::string ifName = TEST_XFRM_CARD_NAME;
-    auto result = multiVpnManager.SetVpnUp(ifName);
+    std::string ipAddr = "2001:db8:85a3::8a2e:370:7334";
+    int32_t prefix = 64;
+    auto result = multiVpnManager.SetVpnAddressIPv6(ifName, ipAddr, prefix);
     EXPECT_TRUE(result == NETMANAGER_SUCCESS || result == NETMANAGER_ERROR);
 }
 
-HWTEST_F(MultiVpnManagerTest, SetVpnDownIPv6001, TestSize.Level1)
+HWTEST_F(MultiVpnManagerTest, SetVpnAddressIPv4Private001, TestSize.Level1)
+{
+    MultiVpnManager multiVpnManager;
+    std::string ifName = "12345678901234567890";
+    std::string ipAddr = "10.0.0.1";
+    int32_t prefix = 24;
+    auto result = multiVpnManager.SetVpnAddressIPv4(ifName, ipAddr, prefix);
+    EXPECT_EQ(result, NETMANAGER_ERROR);
+}
+
+HWTEST_F(MultiVpnManagerTest, SetVpnAddressIPv4Private002, TestSize.Level1)
 {
     MultiVpnManager multiVpnManager;
     std::string ifName = TEST_XFRM_CARD_NAME;
-    auto result = multiVpnManager.SetVpnDown(ifName);
+    std::string ipAddr = "10.0.0.1";
+    int32_t prefix = 24;
+    auto result = multiVpnManager.SetVpnAddressIPv4(ifName, ipAddr, prefix);
     EXPECT_TRUE(result == NETMANAGER_SUCCESS || result == NETMANAGER_ERROR);
 }
 
-HWTEST_F(MultiVpnManagerTest, SetVpnAddressMixedTest001, TestSize.Level1)
+HWTEST_F(MultiVpnManagerTest, SetVpnAddressIPv4PrivateInvalidPrefix, TestSize.Level1)
 {
     MultiVpnManager multiVpnManager;
     std::string ifName = TEST_XFRM_CARD_NAME;
+    std::string ipAddr = "10.0.0.1";
+    int32_t prefix = 0;
+    auto result = multiVpnManager.SetVpnAddressIPv4(ifName, ipAddr, prefix);
+    EXPECT_EQ(result, NETMANAGER_ERROR);
+}
 
-    auto result = multiVpnManager.SetVpnAddress(ifName, "192.168.1.1", 24);
-    EXPECT_TRUE(result == NETMANAGER_SUCCESS || result == NETMANAGER_ERROR);
-
-    result = multiVpnManager.SetVpnAddress(ifName, "2001:db8::1", 64);
-    EXPECT_TRUE(result == NETMANAGER_SUCCESS || result == NETMANAGER_ERROR);
+HWTEST_F(MultiVpnManagerTest, SetVpnAddressIPv6PrivateInvalidPrefix, TestSize.Level1)
+{
+    MultiVpnManager multiVpnManager;
+    std::string ifName = TEST_XFRM_CARD_NAME;
+    std::string ipAddr = "2001:db8:85a3::8a2e:370:7334";
+    int32_t prefix = 129;
+    auto result = multiVpnManager.SetVpnAddressIPv6(ifName, ipAddr, prefix);
+    EXPECT_EQ(result, NETMANAGER_ERROR);
 }
 
 } // namespace NetManagerStandard
