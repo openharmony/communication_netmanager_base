@@ -55,14 +55,11 @@ public:
     static void AsyncWorkCallback(napi_env env, napi_status status, void *data)
     {
         static_assert(std::is_base_of<BaseContext, Context>::value);
-
         if (data == nullptr) {
             return;
         }
- 
         auto deleter = [](Context *context) { delete context; };
         std::unique_ptr<Context, decltype(deleter)> context(static_cast<Context *>(data), deleter);
- 
         if (status != napi_ok) {
             return;
         }
