@@ -584,7 +584,6 @@ int32_t MultiVpnManager::SetVpnAddressIPv4(const std::string &ifName, const std:
     }
 
     if (prefix <= 0 || prefix > NET_MASK_MAX_LENGTH) {
-        NETNATIVE_LOGE("prefix: %{public}d error", prefix);
         close(sock);
         return NETMANAGER_ERROR;
     }
