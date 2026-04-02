@@ -61,15 +61,14 @@ private:
     int32_t SetVpnResult(std::atomic_int &fd, unsigned long cmd, ifreq &ifr);
     int32_t InitIfreq(ifreq &ifr, const std::string &ifName);
     int32_t SetVpnDown(const std::string &ifName);
-    int32_t SetVpnUp(const std::string &ifName);
+    int32_t SetVpnUp(const std::string &ifName, bool isIpv6);
     int32_t AddVpnRemoteAddress(const std::string &ifName, std::atomic_int &net4Sock, ifreq &ifr);
     int32_t CreatePppInterface(const std::string &ifName);
     int32_t GetMultiVpnFd(const std::string &ifName, int32_t &multiVpnFd);
     int32_t DestroyMultiVpnFd(const std::string &ifName);
     int32_t CreateMultiTunInterface(const std::string &ifName);
     int32_t SetVpnAddressIPv6(const std::string &ifName, const std::string &vpnAddr, int32_t prefix);
-    int32_t SetVpnAddressIPv4(const std::string &ifName, const std::string &vpnAddr, int32_t prefix, ifreq &ifr);
-    int32_t RenameInterface(const std::string &oldName, const std::string &newName);
+    int32_t SetVpnAddressIPv4(const std::string &ifName, const std::string &vpnAddr, int32_t prefix);
     void StartMultiVpnSocketListen();
     void StartMultiVpnInterfaceFdListen();
 
@@ -78,7 +77,7 @@ private:
     std::unordered_map<std::string, std::atomic_int> multiVpnFdMap_;
     std::string phyName_;
     std::string multiVpnListeningName_;
-    std::string remoteVpnAddr_;
+    std::string remoteIpv4Addr_;
     std::mutex mutex_;
 };
 } // namespace NetManagerStandard
