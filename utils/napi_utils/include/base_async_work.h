@@ -56,7 +56,14 @@ public:
     {
         static_assert(std::is_base_of<BaseContext, Context>::value);
 
-        if ((status != napi_ok) || (data == nullptr)) {
+        if (data == nullptr) {
+            return;
+        }
+ 
+        auto deleter = [](Context *context) { delete context; };
+        std::unique_ptr<Context, decltype(deleter)> context(static_cast<Context *>(data), deleter);
+ 
+        if (status != napi_ok) {
             return;
         }
         if (reinterpret_cast<BaseContext *>(data)->magic_ != BASE_CONTEXT_MAGIC_NUMBER) {
@@ -70,9 +77,7 @@ public:
             baseContext->GetDeferred() != baseContext->deferredBack4_) {
             return;
         }
-        
-        auto deleter = [](Context *context) { delete context; };
-        std::unique_ptr<Context, decltype(deleter)> context(static_cast<Context *>(data), deleter);
+
         size_t argc = 2;
         napi_value argv[2] = {nullptr};
         if (context->IsExecOK()) {
