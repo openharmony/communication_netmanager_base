@@ -461,6 +461,7 @@ HWTEST_F(NetStatsServiceTest, GetHistoryDataTest001, TestSize.Level1)
     EXPECT_EQ(ret, NETMANAGER_ERROR);
 }
 
+#ifdef SUPPORT_TRAFFIC_STATISTIC
 HWTEST_F(NetStatsServiceTest, UpdateBpfMapTimerTaskTest001, TestSize.Level1)
 {
     auto netStatsService = DelayedSingleton<NetStatsService>::GetInstance();
@@ -483,5 +484,6 @@ HWTEST_F(NetStatsServiceTest, NotifyTrafficAlertFfrtTest001, TestSize.Level1)
     ret = netStatsService2.NotifyTrafficAlertFfrt(simId, flag);
     EXPECT_EQ(ret, 0);
 }
+#endif
 } // namespace NetManagerStandard
 } // namespace OHOS
