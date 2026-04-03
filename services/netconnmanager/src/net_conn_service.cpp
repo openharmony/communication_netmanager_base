@@ -2697,6 +2697,7 @@ int32_t NetConnService::SetGlobalHttpProxy(const HttpProxy &httpProxy)
             NETMGR_LOG_E("GlobalHttpProxy write settingDateUser fail. userId=%{public}d", userId);
             return NETMANAGER_ERR_INTERNAL;
         }
+        globalHttpProxyCache_.Erase(userId);
         SendHttpProxyChangeBroadcast(newHttpProxy);
         UpdateGlobalHttpProxy(newHttpProxy);
     }
