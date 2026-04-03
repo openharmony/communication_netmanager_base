@@ -54,8 +54,6 @@ void EventManager::Emit(const std::string &type, const std::pair<napi_value, nap
     std::unique_lock<std::shared_mutex> lock1(mutexForListenersAndEmitByUv_);
     std::list<EventListener> tmpListeners(listeners_);
     lock1.unlock();
-
-    std::unique_lock lock2(mutexForEmitAndEmitByUv_);
     std::for_each(tmpListeners.begin(), tmpListeners.end(), [type, argv](const EventListener &listener) {
         if (listener.IsAsyncCallback()) {
             /* AsyncCallback(BusinessError error, T data) */
@@ -67,7 +65,6 @@ void EventManager::Emit(const std::string &type, const std::pair<napi_value, nap
             listener.Emit(type, CALLBACK_PARAM_NUM, arg);
         }
     });
-    lock2.unlock();
 
     std::unique_lock<std::shared_mutex> lock3(mutexForListenersAndEmitByUv_);
     auto it = std::remove_if(listeners_.begin(), listeners_.end(),
@@ -88,7 +85,6 @@ void *EventManager::GetData()
 void EventManager::EmitByUvWithModuleId(const std::string &type, const NapiUtils::UvHandler &handler, uint64_t moduleId)
 {
     std::shared_lock<std::shared_mutex> lock1(mutexForListenersAndEmitByUv_);
-    std::lock_guard lock2(mutexForEmitAndEmitByUv_);
 
     std::for_each(listeners_.begin(), listeners_.end(), [type, handler, moduleId](const EventListener &listener) {
         listener.EmitByUvByModuleId(type, handler, moduleId);
@@ -98,7 +94,6 @@ void EventManager::EmitByUvWithModuleId(const std::string &type, const NapiUtils
 void EventManager::EmitByUv(const std::string &type, void *data, void(handler)(uv_work_t *, int status))
 {
     std::shared_lock<std::shared_mutex> lock1(mutexForListenersAndEmitByUv_);
-    std::lock_guard lock2(mutexForEmitAndEmitByUv_);
 
     std::for_each(listeners_.begin(), listeners_.end(), [type, data, handler, this](const EventListener &listener) {
         auto workWrapper = new UvWorkWrapper(data, listener.GetEnv(), type, shared_from_this());
