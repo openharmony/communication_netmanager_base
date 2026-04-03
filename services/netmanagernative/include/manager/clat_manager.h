@@ -37,6 +37,12 @@ public:
 
     int32_t ClatStop(const std::string &v6Iface, NetManagerNative *netsysService);
 
+    int32_t AddClatRoute(int32_t netId, const std::string &tunIface, const std::string &v4Addr,
+                         NetManagerNative *netsysService);
+
+    int32_t DeleteClatRoute(int32_t netId, const std::string &tunIface, const std::string &v4Addr,
+                            NetManagerNative *netsysService);
+
 private:
     uint32_t GetFwmark(int32_t netId);
 
