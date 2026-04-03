@@ -19,7 +19,6 @@
 #include <net/if.h>
 #include <ifaddrs.h>
 #include <string>
-
 #include "bpf_mapper.h"
 #include "bpf_path.h"
 #include "local_network.h"
@@ -39,6 +38,7 @@ using namespace NetManagerStandard;
 namespace {
 constexpr int32_t INTERFACE_UNSET = -1;
 constexpr int32_t LOCAL_NET_ID = 99;
+constexpr const char *VIRTUAL_IFACE_PREFIX = "tun";
 } // namespace
 
 ConnManager::ConnManager()
@@ -262,6 +262,11 @@ void ConnManager::AddIfindexAndNetTypeToMap(const std::string &interfaceName, ne
     }
 }
 
+bool ConnManager::IsVirtualInterface(const std::string &interfaceName)
+{
+    return interfaceName.compare(0, strlen(VIRTUAL_IFACE_PREFIX), VIRTUAL_IFACE_PREFIX) == 0;
+}
+
 int32_t ConnManager::AddInterfaceToNetwork(int32_t netId, std::string &interfaceName,
                                            NetManagerStandard::NetBearType netBearerType)
 {
@@ -281,7 +286,7 @@ int32_t ConnManager::AddInterfaceToNetwork(int32_t netId, std::string &interface
         AddNetIdAndIfaceToMap(netId, nameId);
         AddIfindexAndNetTypeToMap(interfaceName, nameId);
         std::shared_ptr<NetsysNetwork> nw = std::get<1>(net);
-        if (nw->IsPhysical()) {
+        if (nw->IsPhysical() && !IsVirtualInterface(interfaceName)) {
             std::lock_guard<std::mutex> lock(interfaceNameMutex_);
             physicalInterfaceName_[netId] = interfaceName;
         }
@@ -300,7 +305,7 @@ int32_t ConnManager::RemoveInterfaceFromNetwork(int32_t netId, std::string &inte
         if (std::get<0>(net)) {
             std::shared_ptr<NetsysNetwork> nw = std::get<1>(net);
             int32_t ret = nw->RemoveInterface(interfaceName);
-            if (nw->IsPhysical()) {
+            if (nw->IsPhysical() && !IsVirtualInterface(interfaceName)) {
                 std::lock_guard<std::mutex> lock(interfaceNameMutex_);
                 physicalInterfaceName_.erase(netId);
             }

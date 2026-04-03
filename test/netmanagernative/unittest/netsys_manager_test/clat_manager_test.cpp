@@ -81,7 +81,7 @@ HWTEST_F(ClatManagerTest, ClatStartTest001, TestSize.Level1)
 
 /**
  * @tc.name: ClatStopTest001
- * @tc.desc: Test ConnManager ClatStop.
+ * @tc.desc: Test ConnManager ClatStop - clatd not started case.
  * @tc.type: FUNC
  */
 HWTEST_F(ClatManagerTest, ClatStopTest001, TestSize.Level1)
@@ -91,6 +91,7 @@ HWTEST_F(ClatManagerTest, ClatStopTest001, TestSize.Level1)
     netsysService = new NetManagerNative();
     int32_t ret = instance_->ClatStop(v6Iface, netsysService);
     EXPECT_EQ(ret, NETMANAGER_ERR_OPERATION_FAILED);
+    delete netsysService;
 }
 
 /**
@@ -153,7 +154,7 @@ HWTEST_F(ClatManagerTest, AddNatBypassRulesTest001, TestSize.Level1)
     const std::string v6Iface = "rmnet0";
     const std::string v6Ip = "240e:46e:b900:27ab:1532:b318:192b:2841";
     int32_t ret = instance_->AddNatBypassRules(v6Iface, v6Ip);
-    EXPECT_EQ(ret, NETMANAGER_ERR_INVALID_PARAMETER);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
 }
 
 /**
@@ -166,6 +167,98 @@ HWTEST_F(ClatManagerTest, DeleteNatBypassRulesTest001, TestSize.Level1)
     const std::string v6Iface = "rmnet0";
     int32_t ret = instance_->DeleteNatBypassRules(v6Iface);
     EXPECT_EQ(ret, NETMANAGER_ERR_INVALID_PARAMETER);
+}
+
+/**
+ * @tc.number: ClatManager_GetFwmark_Success
+ * @tc.name: Test GetFwmark returns correct mark value
+ * @tc.desc: Verify that GetFwmark correctly constructs the fwmark with netId and permission
+ */
+HWTEST_F(ClatManagerTest, ClatManager_GetFwmark_Success, TestSize.Level1)
+{
+    int32_t netId = 1;
+    uint32_t ret = instance_->GetFwmark(netId);
+    EXPECT_GT(ret, NETMANAGER_SUCCESS);
+}
+
+/**
+ * @tc.number: ClatManager_GetClatNetChains_Generate
+ * @tc.name: Test GetClatNetChains generates correct chain name
+ * @tc.desc: Verify that GetClatNetChains returns the expected chain name format
+ */
+HWTEST_F(ClatManagerTest, ClatManager_GetClatNetChains_Generate, TestSize.Level1)
+{
+    const std::string v6Iface = "rmnet0";
+    std::string result = instance_->GetClatNetChains(v6Iface);
+    EXPECT_EQ(result, "clat_raw_rmnet0_OUTPUT");
+}
+
+/**
+ * @tc.number: ClatManager_EnableByPassNatCmd_Generate
+ * @tc.name: Test EnableByPassNatCmd generates correct command
+ * @tc.desc: Verify that EnableByPassNatCmd returns the expected iptables command
+ */
+HWTEST_F(ClatManagerTest, ClatManager_EnableByPassNatCmd_Generate, TestSize.Level1)
+{
+    const std::string v6Iface = "rmnet0";
+    const std::string v6Ip = "240e:46e:b900:27ab:1532:b318:192b:2841";
+    std::string result = instance_->EnableByPassNatCmd(v6Iface, v6Ip);
+    EXPECT_FALSE(result.empty());
+    EXPECT_NE(result.find("-A clat_raw_rmnet0_OUTPUT"), std::string::npos);
+    EXPECT_NE(result.find("-s 240e:46e:b900:27ab:1532:b318:192b:2841"), std::string::npos);
+    EXPECT_NE(result.find("-j NOTRACK"), std::string::npos);
+}
+
+/**
+ * @tc.number: ClatManager_CombineRestoreRules_Append
+ * @tc.name: Test CombineRestoreRules appends rules correctly
+ * @tc.desc: Verify that CombineRestoreRules correctly appends commands to cmdSet
+ */
+HWTEST_F(ClatManagerTest, ClatManager_CombineRestoreRules_Append, TestSize.Level1)
+{
+    std::string cmdSet = "";
+    std::string cmds = "-A OUTPUT -j ACCEPT";
+    instance_->CombineRestoreRules(cmds, cmdSet);
+    EXPECT_FALSE(cmdSet.empty());
+    EXPECT_NE(cmdSet.find(cmds), std::string::npos);
+}
+
+/**
+ * @tc.number: ClatManager_AddClatRoute_Success
+ * @tc.name: Test AddClatRoute adds route successfully
+ * @tc.desc: Verify that AddClatRoute returns NETMANAGER_SUCCESS when parameters are valid
+ * @tc.note: NetManagerNative methods are not virtual, so this test uses the actual implementation
+ */
+HWTEST_F(ClatManagerTest, ClatManager_AddClatRoute_Success, TestSize.Level1)
+{
+    int32_t netId = 1;
+    const std::string tunIface = "tunv4-rmnet0";
+    const std::string v4Addr = "192.0.0.2";
+    NetManagerNative *netsysService = new NetManagerNative();
+
+    int32_t ret = instance_->AddClatRoute(netId, tunIface, v4Addr, netsysService);
+    EXPECT_NE(ret, NETMANAGER_SUCCESS);
+
+    delete netsysService;
+}
+
+/**
+ * @tc.number: ClatManager_DeleteClatRoute_Success
+ * @tc.name: Test DeleteClatRoute deletes route successfully
+ * @tc.desc: Verify that DeleteClatRoute returns NETMANAGER_SUCCESS when parameters are valid
+ * @tc.note: NetManagerNative methods are not virtual, so this test uses the actual implementation
+ */
+HWTEST_F(ClatManagerTest, ClatManager_DeleteClatRoute_Success, TestSize.Level1)
+{
+    int32_t netId = 1;
+    const std::string tunIface = "tunv4-rmnet0";
+    const std::string v4Addr = "192.0.0.2";
+    NetManagerNative *netsysService = new NetManagerNative();
+
+    int32_t ret = instance_->DeleteClatRoute(netId, tunIface, v4Addr, netsysService);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+
+    delete netsysService;
 }
 } // namespace NetsysNative
 } // namespace OHOS

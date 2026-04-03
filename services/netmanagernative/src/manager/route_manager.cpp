@@ -49,7 +49,6 @@ namespace OHOS {
 namespace nmd {
 namespace {
 constexpr int32_t RULE_LEVEL_UNREACHABLE_NETWORK = 7000;
-constexpr int32_t RULE_LEVEL_CLAT_TUN = 8000;
 constexpr int32_t RULE_LEVEL_VPN_OUTPUT_TO_LOCAL = 9000;
 constexpr int32_t RULE_LEVEL_SECURE_VPN = 10000;
 constexpr int32_t RULE_LEVEL_VNIC_NETWORK = 10500;
@@ -1107,79 +1106,6 @@ int32_t RouteManager::ReadAddr(const std::string &addr, InetAddr *res)
     }
 
     return inet_pton(res->family, addressString.c_str(), res->data);
-}
-
-int32_t RouteManager::AddClatTunInterface(const std::string &interfaceName, const std::string &dstAddr,
-                                          const std::string &nxtHop)
-{
-    NETNATIVE_LOGI("AddClatTunInterface, interfaceName:%{public}s; dstAddr:%{public}s; nxtHop:%{public}s;",
-                   interfaceName.c_str(), dstAddr.c_str(), nxtHop.c_str());
-    bool routeRepeat = false;
-    NetworkRouteInfo networkRouteInfo;
-    networkRouteInfo.ifName = interfaceName;
-    networkRouteInfo.destination = dstAddr;
-    networkRouteInfo.nextHop = nxtHop;
-    networkRouteInfo.isExcludedRoute = false;
-    if (int32_t ret = AddRoute(RouteManager::INTERFACE, networkRouteInfo, routeRepeat)) {
-        NETNATIVE_LOGE("AddRoute err, error is %{public}d", ret);
-        return ret;
-    }
-    return UpdateClatTunInterface(interfaceName, PERMISSION_NONE, ADD_CONTROL);
-}
-
-int32_t RouteManager::RemoveClatTunInterface(const std::string &interfaceName)
-{
-    NETNATIVE_LOGI("RemoveClatTunInterface, interfaceName:%{public}s", interfaceName.c_str());
-    if (int32_t ret = UpdateClatTunInterface(interfaceName, PERMISSION_NONE, DEL_CONTROL)) {
-        NETNATIVE_LOGE("UpdatePhysicalNetwork err, error is %{public}d", ret);
-        return ret;
-    }
-    // LCOV_EXCL_START
-    if (int32_t ret = ClearRoutes(interfaceName)) {
-        NETNATIVE_LOGE("ClearRoutes err, error is %{public}d", ret);
-        return ret;
-    }
-    if (int32_t ret = ClearSharingRules(interfaceName)) {
-        NETNATIVE_LOGE("ClearSharingRules err, error is %{public}d", ret);
-        return ret;
-    }
-    // LCOV_EXCL_STOP
-
-    return 0;
-}
-
-int32_t RouteManager::UpdateClatTunInterface(const std::string &interfaceName, NetworkPermission permission, bool add)
-{
-    NETNATIVE_LOGI("UpdateClatTunInterface, interfaceName: %{public}s, permission: %{public}d, add: %{public}d",
-                   interfaceName.c_str(), static_cast<int32_t>(permission), add);
-    uint32_t table = FindTableByInterfacename(interfaceName);
-    if (table == RT_TABLE_UNSPEC) {
-        NETNATIVE_LOGE("table == RT_TABLE_UNSPEC, this is error");
-        return -1;
-    }
-
-    Fwmark fwmark;
-    fwmark.permission = permission;
-
-    Fwmark mask;
-    mask.permission = permission;
-
-    RuleInfo ruleInfo;
-    ruleInfo.ruleTable = table;
-    ruleInfo.rulePriority = RULE_LEVEL_CLAT_TUN;
-    ruleInfo.ruleFwmark = fwmark.intValue;
-    ruleInfo.ruleMask = mask.intValue;
-    ruleInfo.ruleIif = RULEIIF_LOOPBACK;
-    ruleInfo.ruleOif = RULEOIF_NULL;
-
-    // LCOV_EXCL_START
-    if (int32_t ret = UpdateRuleInfo(add ? RTM_NEWRULE : RTM_DELRULE, FR_ACT_TO_TBL, ruleInfo)) {
-        NETNATIVE_LOG_D("UpdateRuleInfo failed, err is %{public}d", ret);
-        return ret;
-    }
-    // LCOV_EXCL_STOP
-
-    return 0;
 }
 
 int32_t RouteManager::Init()

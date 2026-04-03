@@ -111,6 +111,38 @@ int32_t ClatManager::DeleteNatBypassRules(const std::string &v6Iface)
     return NETMANAGER_SUCCESS;
 }
 
+int32_t ClatManager::AddClatRoute(int32_t netId, const std::string &tunIface, const std::string &v4Addr,
+                                  NetManagerNative *netsysService)
+{
+    NETNATIVE_LOGI("AddClatRoute for %{public}s", tunIface.c_str());
+    // LCOV_EXCL_START
+    std::string tunIfaceName = tunIface;
+    auto ret = netsysService->NetworkAddInterface(netId, tunIfaceName, BEARER_DEFAULT);
+    if (ret != NETMANAGER_SUCCESS) {
+        NETNATIVE_LOGW("NetworkAddInterface failed for %{public}s", tunIface.c_str());
+        return NETMANAGER_ERR_OPERATION_FAILED;
+    }
+
+    ret = netsysService->NetworkAddRoute(netId, tunIface, DEFAULT_V4_ADDR, v4Addr, false);
+    if (ret != NETMANAGER_SUCCESS) {
+        NETNATIVE_LOGW("AddClatRoute failed for %{public}s", tunIface.c_str());
+        return NETMANAGER_ERR_OPERATION_FAILED;
+    }
+    // LCOV_EXCL_STOP
+    return NETMANAGER_SUCCESS;
+}
+
+int32_t ClatManager::DeleteClatRoute(int32_t netId, const std::string &tunIface, const std::string &v4Addr,
+                                     NetManagerNative *netsysService)
+{
+    NETNATIVE_LOGI("DeleteClatRoute for %{public}s", tunIface.c_str());
+    netsysService->NetworkRemoveRoute(netId, tunIface, DEFAULT_V4_ADDR, v4Addr, false);
+
+    std::string tunIfaceName = tunIface;
+    netsysService->NetworkRemoveInterface(netId, tunIfaceName);
+    return NETMANAGER_SUCCESS;
+}
+
 int32_t ClatManager::ClatStart(const std::string &v6Iface, int32_t netId, const std::string &nat64PrefixStr,
                                NetManagerNative *netsysService)
 {
@@ -121,7 +153,6 @@ int32_t ClatManager::ClatStart(const std::string &v6Iface, int32_t netId, const 
     }
 
     if (netsysService == nullptr) {
-        NETNATIVE_LOGW("NetManagerNative pointer is null");
         return NETMANAGER_ERR_INVALID_PARAMETER;
     }
 
@@ -156,13 +187,14 @@ int32_t ClatManager::ClatStart(const std::string &v6Iface, int32_t netId, const 
         std::forward_as_tuple(tunFd, readSock6, writeSock6, v6Iface, nat64PrefixStr, v4Addr.address_, v6Addr.address_));
     clatds_[v6Iface].Start();
 
-    ret = RouteManager::AddClatTunInterface(tunIface, DEFAULT_V4_ADDR, v4Addr.address_);
     // LCOV_EXCL_START
+    ret = AddClatRoute(netId, tunIface, v4Addr.address_, netsysService);
     auto netRet = AddNatBypassRules(v6Iface, v6Addr.address_);
     if (ret != NETMANAGER_SUCCESS || netRet != NETMANAGER_SUCCESS) {
         close(tunFd);
         close(readSock6);
         close(writeSock6);
+        clatds_.erase(v6Iface);
         NETNATIVE_LOGW("Add route on %{public}s failed", tunIface.c_str());
         return NETMANAGER_ERR_OPERATION_FAILED;
     }
@@ -185,10 +217,16 @@ int32_t ClatManager::ClatStop(const std::string &v6Iface, NetManagerNative *nets
         NETNATIVE_LOGW("NetManagerNative pointer is null");
         return NETMANAGER_ERR_INVALID_PARAMETER;
     }
+    // LCOV_EXCL_START
+    int32_t netId = clatdTrackers_[v6Iface].netId;
+    std::string tunIface = clatdTrackers_[v6Iface].tunIface;
+    std::string v4Addr = clatdTrackers_[v6Iface].v4Addr.address_;
+
     DeleteNatBypassRules(v6Iface);
     NETNATIVE_LOGI("Stopping clatd on %{public}s", v6Iface.c_str());
-    netsysService->SetClatDnsEnableIpv4(clatdTrackers_[v6Iface].netId, false);
-    RouteManager::RemoveClatTunInterface(clatdTrackers_[v6Iface].tunIface);
+    netsysService->SetClatDnsEnableIpv4(netId, false);
+    DeleteClatRoute(netId, tunIface, v4Addr, netsysService);
+    // LCOV_EXCL_STOP
 
     clatds_[v6Iface].Stop();
     clatds_.erase(v6Iface);

@@ -655,50 +655,6 @@ HWTEST_F(RouteManagerTest, AddInterfaceToLocalNetworkTest005, TestSize.Level1)
     EXPECT_EQ(ret, 0);
 }
 
-HWTEST_F(RouteManagerTest, AddClatTunInterfaceTest002, TestSize.Level1)
-{
-    const std::string interfaceName = "eth0";
-    const std::string dstAddr = "127.0.0.1";
-    const std::string nxtHop = "nxtHop";
-    auto ret = RouteManager::AddClatTunInterface(interfaceName, dstAddr, nxtHop);
-    EXPECT_EQ(ret, -1);
-
-    ret = RouteManager::AddClatTunInterface(interfaceName, dstAddr, nxtHop);
-    EXPECT_EQ(ret, -1);
-}
-
-HWTEST_F(RouteManagerTest, RemoveClatTunInterfaceTest002, TestSize.Level1)
-{
-    const std::string interfaceName = "eth0";
-    std::map<std::string, uint32_t> interfaceToTable;
-    interfaceToTable[interfaceName] = RT_TABLE_UNSPEC;
-    RouteManager::interfaceToTable_ = interfaceToTable;
-    auto ret = RouteManager::RemoveClatTunInterface(interfaceName);
-    EXPECT_EQ(ret, -1);
-
-    interfaceToTable[interfaceName] = 1;
-    RouteManager::interfaceToTable_ = interfaceToTable;
-    ret = RouteManager::RemoveClatTunInterface(interfaceName);
-    EXPECT_EQ(ret, NETMANAGER_ERR_INTERNAL);
-}
-
-HWTEST_F(RouteManagerTest, UpdateClatTunInterfaceTest001, TestSize.Level1)
-{
-    const std::string interfaceName = "eth0";
-    std::map<std::string, uint32_t> interfaceToTable;
-    interfaceToTable[interfaceName] = RT_TABLE_UNSPEC;
-    RouteManager::interfaceToTable_ = interfaceToTable;
-    auto ret = RouteManager::UpdateClatTunInterface(interfaceName, PERMISSION_NONE, true);
-    EXPECT_EQ(ret, -1);
-
-    interfaceToTable[interfaceName] = 1;
-    RouteManager::interfaceToTable_ = interfaceToTable;
-    ret = RouteManager::UpdateClatTunInterface(interfaceName, PERMISSION_NONE, true);
-    EXPECT_EQ(ret, 0);
-    ret = RouteManager::UpdateClatTunInterface(interfaceName, PERMISSION_NONE, false);
-    EXPECT_GE(ret, 0);
-}
-
 HWTEST_F(RouteManagerTest, ClearRoutesTest001, TestSize.Level1)
 {
     int32_t netId = 0;
@@ -824,22 +780,6 @@ HWTEST_F(RouteManagerTest, EnableDistributedClientNet001, TestSize.Level1)
     std::string iif;
     auto ret = RouteManager::EnableDistributedClientNet(virNicAddr, iif);
     EXPECT_EQ(ret, -1);
-}
-
-HWTEST_F(RouteManagerTest, AddClatTunInterface001, TestSize.Level1)
-{
-    std::string interfaceName;
-    std::string dstAddr;
-    std::string nxtHop;
-    auto ret = RouteManager::AddClatTunInterface(interfaceName, dstAddr, nxtHop);
-    EXPECT_NE(ret, 0);
-}
-
-HWTEST_F(RouteManagerTest, RemoveClatTunInterface001, TestSize.Level1)
-{
-    std::string interfaceName;
-    auto ret = RouteManager::RemoveClatTunInterface(interfaceName);
-    EXPECT_NE(ret, 0);
 }
 
 HWTEST_F(RouteManagerTest, UpdateIncomingPacketMark001, TestSize.Level1)

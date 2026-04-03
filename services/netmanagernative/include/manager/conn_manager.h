@@ -272,7 +272,8 @@ public:
      */
     int32_t UpdateVpnRules(uint16_t netId, const std::vector<std::string> &extMessages, bool add);
 #endif // SUPPORT_SYSVPN
-
+private:
+    bool IsVirtualInterface(const std::string &interfaceName);
 private:
     int32_t defaultNetId_;
     bool needReinitRouteFlag_;
