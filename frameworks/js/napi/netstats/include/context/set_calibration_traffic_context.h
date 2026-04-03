@@ -32,7 +32,7 @@ public:
     explicit SetCalibrationTrafficContext(napi_env env, std::shared_ptr<EventManager>& manager);
 
     uint64_t GetTotalMonthlyData() const;
-    uint64_t GetRemainingData() const;
+    int64_t GetRemainingData() const;
     uint32_t GetSimId() const;
 
     void ParseParams(napi_value *params, size_t paramsCount);
@@ -44,7 +44,7 @@ private:
 
 private:
     uint32_t simId_ = 0;
-    uint64_t remainingData_ = 0;
+    int64_t remainingData_ = 0;
     uint64_t totalMonthlyData_ = UINT64_MAX;
 };
 } // namespace NetManagerStandard

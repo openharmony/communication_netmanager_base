@@ -365,10 +365,10 @@ void SetCalibrationTrafficFuzzTest(const uint8_t *data, size_t size)
     MessageParcel dataParcel;
     CheckParamVaild(dataParcel, data, size);
     uint32_t simId = NetStatsGetData<uint32_t>();
-    uint32_t remainData = NetStatsGetData<uint64_t>();
-    uint32_t tatalData = NetStatsGetData<uint64_t>();
+    int64_t remainData = NetStatsGetData<int64_t>();
+    uint64_t tatalData = NetStatsGetData<uint64_t>();
     dataParcel.WriteUint32(simId);
-    dataParcel.WriteUint64(remainData);
+    dataParcel.WriteInt64(remainData);
     dataParcel.WriteUint64(tatalData);
     OnRemoteRequest(static_cast<uint32_t>(StatsInterfaceCode::CMD_SET_CALIBRATION_TRAFFIC), dataParcel);
 }
