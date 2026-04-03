@@ -352,8 +352,7 @@ void DnsResolvListenInternal::ProcJudgeIpv4Command(int clientSockFd, uint16_t ne
 void DnsResolvListenInternal::ProcGetDefaultNetworkCommand(int clientSockFd)
 {
     NetHandle netHandle;
-    NetConnClient::GetInstance().GetDefaultNet(netHandle);
-    int netId = netHandle.GetNetId();
+    int netId = DnsParamCache::GetInstance().GetDefaultNetwork();
     NETNATIVE_LOGE("ProcGetDefaultNetworkCommand %{public}d", netId);
     if (!PollSendData(clientSockFd, reinterpret_cast<char *>(&netId), sizeof(int))) {
         NETNATIVE_LOGE("send failed");
