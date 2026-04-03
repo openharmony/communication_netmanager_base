@@ -498,7 +498,6 @@ int32_t MultiVpnManager::SetVpnCallMode(const std::string &message)
     return nmd::RouteManager::SetVpnCallMode(message);
 }
 
-// LCOV_EXCL_START
 int32_t MultiVpnManager::SetVpnAddressIPv6(const std::string &ifName, const std::string &vpnAddr, int32_t prefix)
 {
     if (prefix < 0 || prefix > IPV6_MAX_LENGTH) {
@@ -524,6 +523,7 @@ int32_t MultiVpnManager::SetVpnAddressIPv6(const std::string &ifName, const std:
         close(net6Sock);
         return NETMANAGER_ERROR;
     }
+// LCOV_EXCL_START
     ifindex = ifr.ifr_ifindex;
 
     struct in6_ifreq ifr6 = {};
@@ -553,6 +553,7 @@ int32_t MultiVpnManager::SetVpnAddressIPv6(const std::string &ifName, const std:
     NETNATIVE_LOGI("set ipv6 address success");
     return NETMANAGER_SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t MultiVpnManager::SetVpnAddressIPv4(const std::string &ifName, const std::string &vpnAddr, int32_t prefix)
 {
@@ -560,7 +561,7 @@ int32_t MultiVpnManager::SetVpnAddressIPv4(const std::string &ifName, const std:
     if (InitIfreq(ifr, ifName) != NETMANAGER_SUCCESS) {
         return NETMANAGER_ERROR;
     }
-
+// LCOV_EXCL_START
     std::atomic_int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0) {
         NETNATIVE_LOGE("create SOCK_DGRAM ipv4 failed: %{public}d", errno);
