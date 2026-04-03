@@ -144,12 +144,12 @@ int32_t MultiVpnManager::SetVpnMtu(const std::string &ifName, int32_t mtu)
         NETNATIVE_LOGE("create IPv6 socket failed: %{public}d", errno);
     }
 
-    if (ipv4Success || ipv6Success) {
-        return NETMANAGER_SUCCESS;
+    if (!ipv4Success || !ipv6Success) {
+        NETNATIVE_LOGE("set MTU failed");
+        return NETMANAGER_ERROR;
     }
-
-    NETNATIVE_LOGE("set MTU failed for both IPv4 and IPv6");
-    return NETMANAGER_ERROR;
+    NETNATIVE_LOGE("set MTU success");
+    return NETMANAGER_SUCCESS;
 }
 // LCOV_EXCL_STOP
 
