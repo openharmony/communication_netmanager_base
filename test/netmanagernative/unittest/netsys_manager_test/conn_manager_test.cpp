@@ -801,5 +801,319 @@ HWTEST_F(ConnManagerTest, GetConnectOwnerUidTest002, TestSize.Level1)
     int32_t ret = instance_->GetConnectOwnerUid(info, uid);
     EXPECT_EQ(ret, NETMANAGER_SUCCESS);
 }
+
+/**
+ * @tc.number: ConnManager_IsVirtualInterface_True
+ * @tc.name: Test IsVirtualInterface returns true for tun interface
+ * @tc.desc: Verify that IsVirtualInterface returns true when interface name starts with "tun"
+ */
+HWTEST_F(ConnManagerTest, ConnManager_IsVirtualInterface_True, TestSize.Level1)
+{
+    std::string interfaceName = "tun0";
+    bool ret = instance_->IsVirtualInterface(interfaceName);
+    EXPECT_EQ(ret, true);
+
+    interfaceName = "tun100";
+    ret = instance_->IsVirtualInterface(interfaceName);
+    EXPECT_EQ(ret, true);
+
+    interfaceName = "tunabc";
+    ret = instance_->IsVirtualInterface(interfaceName);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.number: ConnManager_IsVirtualInterface_False
+ * @tc.name: Test IsVirtualInterface returns false for non-tun interface
+ * @tc.desc: Verify that IsVirtualInterface returns false when interface name does not start with "tun"
+ */
+HWTEST_F(ConnManagerTest, ConnManager_IsVirtualInterface_False, TestSize.Level1)
+{
+    std::string interfaceName = "wlan0";
+    bool ret = instance_->IsVirtualInterface(interfaceName);
+    EXPECT_EQ(ret, false);
+
+    interfaceName = "eth0";
+    ret = instance_->IsVirtualInterface(interfaceName);
+    EXPECT_EQ(ret, false);
+
+    interfaceName = "rmnet0";
+    ret = instance_->IsVirtualInterface(interfaceName);
+    EXPECT_EQ(ret, false);
+
+    interfaceName = "";
+    ret = instance_->IsVirtualInterface(interfaceName);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.number: ConnManager_GetTableType_Vpn
+ * @tc.name: Test GetTableType returns VPN_NETWORK for virtual network
+ * @tc.desc: Verify that GetTableType returns VPN_NETWORK when netId corresponds to a virtual network
+ */
+HWTEST_F(ConnManagerTest, ConnManager_GetTableType_Vpn, TestSize.Level1)
+{
+    int32_t netId = 1;
+    instance_->CreateVirtualNetwork(netId, true);
+    RouteManager::TableType type = instance_->GetTableType(netId);
+    EXPECT_EQ(type, RouteManager::TableType::VPN_NETWORK);
+    instance_->DestroyNetwork(netId);
+}
+
+/**
+ * @tc.number: ConnManager_GetTableType_Internal
+ * @tc.name: Test GetTableType returns INTERNAL_DEFAULT for internal netId
+ * @tc.desc: Verify that GetTableType returns INTERNAL_DEFAULT when netId is an internal network ID
+ */
+HWTEST_F(ConnManagerTest, ConnManager_GetTableType_Internal, TestSize.Level1)
+{
+    int32_t netId = INTERNAL_NETID;
+    RouteManager::TableType type = instance_->GetTableType(netId);
+    EXPECT_EQ(type, RouteManager::TableType::INTERNAL_DEFAULT);
+}
+
+/**
+ * @tc.number: ConnManager_FindVirtualNetwork_IsPhysical
+ * @tc.name: Test FindVirtualNetwork returns nullptr for physical network
+ * @tc.desc: Verify that FindVirtualNetwork returns nullptr when the network is a physical network
+ */
+HWTEST_F(ConnManagerTest, ConnManager_FindVirtualNetwork_IsPhysical, TestSize.Level1)
+{
+    int32_t netId = 200;
+    instance_->CreatePhysicalNetwork(netId, PERMISSION_NONE);
+    auto result = instance_->FindVirtualNetwork(netId);
+    EXPECT_EQ(result, nullptr);
+    instance_->DestroyNetwork(netId);
+}
+
+/**
+ * @tc.number: ConnManager_FindVirtualNetwork_Success
+ * @tc.name: Test FindVirtualNetwork returns virtual network pointer
+ * @tc.desc: Verify that FindVirtualNetwork returns valid pointer when the network is a virtual network
+ */
+HWTEST_F(ConnManagerTest, ConnManager_FindVirtualNetwork_Success, TestSize.Level1)
+{
+    int32_t netId = 201;
+    instance_->CreateVirtualNetwork(netId, true);
+    auto result = instance_->FindVirtualNetwork(netId);
+    EXPECT_NE(result, nullptr);
+    instance_->DestroyNetwork(netId);
+}
+
+/**
+ * @tc.number: ConnManager_AddUidsToNetwork_NotVirtual
+ * @tc.name: Test AddUidsToNetwork returns error for non-virtual network
+ * @tc.desc: Verify that AddUidsToNetwork returns NETMANAGER_ERROR when network is not virtual
+ */
+HWTEST_F(ConnManagerTest, ConnManager_AddUidsToNetwork_NotVirtual, TestSize.Level1)
+{
+    int32_t netId = 202;
+    instance_->CreatePhysicalNetwork(netId, PERMISSION_NONE);
+    std::vector<NetManagerStandard::UidRange> uidRanges;
+    NetManagerStandard::UidRange range(1000, 2000, 0, netId);
+    uidRanges.push_back(range);
+    int32_t ret = instance_->AddUidsToNetwork(netId, uidRanges);
+    EXPECT_EQ(ret, NETMANAGER_ERROR);
+    instance_->DestroyNetwork(netId);
+}
+
+/**
+ * @tc.number: ConnManager_RemoveUidsFromNetwork_NotVirtual
+ * @tc.name: Test RemoveUidsFromNetwork returns error for non-virtual network
+ * @tc.desc: Verify that RemoveUidsFromNetwork returns NETMANAGER_ERROR when network is not virtual
+ */
+HWTEST_F(ConnManagerTest, ConnManager_RemoveUidsFromNetwork_NotVirtual, TestSize.Level1)
+{
+    int32_t netId = 203;
+    instance_->CreatePhysicalNetwork(netId, PERMISSION_NONE);
+    std::vector<NetManagerStandard::UidRange> uidRanges;
+    NetManagerStandard::UidRange range(1000, 2000, 0, netId);
+    uidRanges.push_back(range);
+    int32_t ret = instance_->RemoveUidsFromNetwork(netId, uidRanges);
+    EXPECT_EQ(ret, NETMANAGER_ERROR);
+    instance_->DestroyNetwork(netId);
+}
+
+/**
+ * @tc.number: ConnManager_AddRoutes_Success
+ * @tc.name: Test AddRoutes batch add routes
+ * @tc.desc: Verify that AddRoutes can add multiple routes successfully
+ */
+HWTEST_F(ConnManagerTest, ConnManager_AddRoutes_Success, TestSize.Level1)
+{
+    int32_t netId = 204;
+    instance_->CreatePhysicalNetwork(netId, PERMISSION_NONE);
+    std::vector<NetworkRouteInfo> infos;
+    NetworkRouteInfo info1;
+    info1.ifName = INTERFACENAME;
+    info1.destination = "10.0.0.0/8";
+    info1.nextHop = "192.168.1.1";
+    info1.isExcludedRoute = false;
+    infos.push_back(info1);
+
+    NetworkRouteInfo info2;
+    info2.ifName = INTERFACENAME;
+    info2.destination = "172.16.0.0/12";
+    info2.nextHop = "192.168.1.2";
+    info2.isExcludedRoute = false;
+    infos.push_back(info2);
+
+    int32_t ret = instance_->AddRoutes(netId, infos);
+    EXPECT_GE(ret, NETMANAGER_SUCCESS);
+    instance_->DestroyNetwork(netId);
+}
+
+/**
+ * @tc.number: ConnManager_CloseSocketsUid_Success
+ * @tc.name: Test CloseSocketsUid closes sockets for specific uid
+ * @tc.desc: Verify that CloseSocketsUid can close sockets for a given UID
+ */
+HWTEST_F(ConnManagerTest, ConnManager_CloseSocketsUid_Success, TestSize.Level1)
+{
+    std::string ipAddr = "192.168.1.100";
+    uint32_t uid = 12345;
+    int32_t ret = instance_->CloseSocketsUid(ipAddr, uid);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+}
+
+/**
+ * @tc.number: ConnManager_GetSystemNetPortStates_Success
+ * @tc.name: Test GetSystemNetPortStates gets port states
+ * @tc.desc: Verify that GetSystemNetPortStates can retrieve system network port states
+ */
+HWTEST_F(ConnManagerTest, ConnManager_GetSystemNetPortStates_Success, TestSize.Level1)
+{
+    NetManagerStandard::NetPortStatesInfo netPortStatesInfo;
+    int32_t ret = instance_->GetSystemNetPortStates(netPortStatesInfo);
+    EXPECT_GE(ret, NETMANAGER_SUCCESS);
+}
+
+/**
+ * @tc.number: ConnManager_AddInterfaceToNetwork_PhysicalNonVirtual
+ * @tc.name: Test AddInterfaceToNetwork with physical network and non-virtual interface
+ * @tc.desc: Verify that AddInterfaceToNetwork returns NETMANAGER_SUCCESS
+ * @tc.cover: This test covers the branch: if (nw->IsPhysical() && !IsVirtualInterface(interfaceName))
+ */
+HWTEST_F(ConnManagerTest, ConnManager_AddInterfaceToNetwork_PhysicalNonVirtual, TestSize.Level1)
+{
+    int32_t netId = 300;
+    int32_t ret = instance_->CreatePhysicalNetwork(netId, PERMISSION_NONE);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+
+    std::string interfaceName = "eth0";
+    ret = instance_->AddInterfaceToNetwork(netId, interfaceName, BEARER_DEFAULT);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+
+    ret = instance_->DestroyNetwork(netId);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+}
+
+/**
+ * @tc.number: ConnManager_AddInterfaceToNetwork_PhysicalVirtual
+ * @tc.name: Test AddInterfaceToNetwork with physical network and virtual interface
+ * @tc.desc: Verify that AddInterfaceToNetwork returns NETMANAGER_SUCCESS
+ * @tc.cover: This test covers the branch: if (nw->IsPhysical() && IsVirtualInterface(interfaceName)) - false case
+ */
+HWTEST_F(ConnManagerTest, ConnManager_AddInterfaceToNetwork_PhysicalVirtual, TestSize.Level1)
+{
+    int32_t netId = 301;
+    int32_t ret = instance_->CreatePhysicalNetwork(netId, PERMISSION_NONE);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+
+    std::string interfaceName = "tun0";
+    ret = instance_->AddInterfaceToNetwork(netId, interfaceName, BEARER_DEFAULT);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+
+    ret = instance_->DestroyNetwork(netId);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+}
+
+/**
+ * @tc.number: ConnManager_RemoveInterfaceFromNetwork_PhysicalNonVirtual
+ * @tc.name: Test RemoveInterfaceFromNetwork with physical network and non-virtual interface
+ * @tc.desc: Verify that RemoveInterfaceFromNetwork returns NETMANAGER_SUCCESS
+ * @tc.cover: This test covers the branch: if (nw->IsPhysical() && !IsVirtualInterface(interfaceName))
+ */
+HWTEST_F(ConnManagerTest, ConnManager_RemoveInterfaceFromNetwork_PhysicalNonVirtual, TestSize.Level1)
+{
+    int32_t netId = 302;
+    int32_t ret = instance_->CreatePhysicalNetwork(netId, PERMISSION_NONE);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+
+    std::string interfaceName = "eth0";
+    ret = instance_->AddInterfaceToNetwork(netId, interfaceName, BEARER_DEFAULT);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+
+    ret = instance_->RemoveInterfaceFromNetwork(netId, interfaceName);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+
+    ret = instance_->DestroyNetwork(netId);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+}
+
+/**
+ * @tc.number: ConnManager_RemoveInterfaceFromNetwork_PhysicalVirtual
+ * @tc.name: Test RemoveInterfaceFromNetwork with physical network and virtual interface
+ * @tc.desc: Verify that RemoveInterfaceFromNetwork returns NETMANAGER_SUCCESS
+ * @tc.cover: This test covers the branch: if (nw->IsPhysical() && IsVirtualInterface(interfaceName)) - false case
+ */
+HWTEST_F(ConnManagerTest, ConnManager_RemoveInterfaceFromNetwork_PhysicalVirtual, TestSize.Level1)
+{
+    int32_t netId = 303;
+    int32_t ret = instance_->CreatePhysicalNetwork(netId, PERMISSION_NONE);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+
+    std::string interfaceName = "tun0";
+    ret = instance_->AddInterfaceToNetwork(netId, interfaceName, BEARER_DEFAULT);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+    ret = instance_->RemoveInterfaceFromNetwork(netId, interfaceName);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+
+    ret = instance_->DestroyNetwork(netId);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+}
+
+/**
+ * @tc.number: ConnManager_AddInterfaceToNetwork_VirtualNetwork
+ * @tc.name: Test AddInterfaceToNetwork with virtual network (IsPhysical returns false)
+ * @tc.desc: Verify that AddInterfaceToNetwork returns NETMANAGER_SUCCESS when network is virtual
+ * @tc.cover: This test covers the branch:  nw->IsPhysical() is false
+ */
+HWTEST_F(ConnManagerTest, ConnManager_AddInterfaceToNetwork_VirtualNetwork, TestSize.Level1)
+{
+    int32_t netId = 400;
+    int32_t ret = instance_->CreateVirtualNetwork(netId, true);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+
+    std::string interfaceName = "eth0";
+    ret = instance_->AddInterfaceToNetwork(netId, interfaceName, BEARER_DEFAULT);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+
+    ret = instance_->DestroyNetwork(netId);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+}
+
+/**
+ * @tc.number: ConnManager_RemoveInterfaceFromNetwork_VirtualNetwork
+ * @tc.name: Test RemoveInterfaceFromNetwork with virtual network (IsPhysical returns false)
+ * @tc.desc: Verify that RemoveInterfaceFromNetwork returns NETMANAGER_SUCCESS when network is virtual
+ * @tc.cover: This test covers the branch: nw->IsPhysical() is false
+ */
+HWTEST_F(ConnManagerTest, ConnManager_RemoveInterfaceFromNetwork_VirtualNetwork, TestSize.Level1)
+{
+    int32_t netId = 401;
+    int32_t ret = instance_->CreateVirtualNetwork(netId, true);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+
+    std::string interfaceName = "eth0";
+    ret = instance_->AddInterfaceToNetwork(netId, interfaceName, BEARER_DEFAULT);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+
+    ret = instance_->RemoveInterfaceFromNetwork(netId, interfaceName);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+
+    ret = instance_->DestroyNetwork(netId);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+}
 } // namespace NetsysNative
 } // namespace OHOS
