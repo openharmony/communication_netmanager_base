@@ -313,7 +313,7 @@ public:
      * @permission ohos.permission.GET_NETWORK_STATS
      * @systemapi Hide this for inner system use.
      */
-    int32_t SetCalibrationTraffic(uint32_t simId, uint64_t remainingData, uint64_t totalMonthlyData);
+    int32_t SetCalibrationTraffic(uint32_t simId, int64_t remainingData, uint64_t totalMonthlyData);
 
 private:
     class NetStatsDeathRecipient : public IRemoteObject::DeathRecipient {

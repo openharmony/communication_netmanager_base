@@ -419,11 +419,23 @@ HWTEST_F(NetStatsServiceTest, SetCalibrationTrafficTest001, TestSize.Level1)
 {
     NetStatsService netStatsService;
     uint32_t simId = 20;
-    uint64_t remainingData = 100;
+    int64_t remainingData = 100;
     uint64_t totalMonthlyData = 500;
     netStatsService.SetCalibrationTraffic(1, remainingData, totalMonthlyData);
     netStatsService.SetCalibrationTraffic(1, remainingData + 500, totalMonthlyData);
     netStatsService.SetCalibrationTraffic(1, remainingData + 500, UINT64_MAX);
+    int32_t ret = netStatsService.SetCalibrationTraffic(simId, remainingData, totalMonthlyData);
+    EXPECT_EQ(ret, NETMANAGER_ERR_INVALID_PARAMETER);
+}
+
+HWTEST_F(NetStatsServiceTest, SetCalibrationTrafficTest002, TestSize.Level1)
+{
+    NetStatsService netStatsService;
+    uint32_t simId = 20;
+    int64_t remainingData = -100;
+    uint64_t totalMonthlyData = 500;
+    netStatsService.SetCalibrationTraffic(1, remainingData, totalMonthlyData);
+    netStatsService.SetCalibrationTraffic(1, remainingData, totalMonthlyData);
     int32_t ret = netStatsService.SetCalibrationTraffic(simId, remainingData, totalMonthlyData);
     EXPECT_EQ(ret, NETMANAGER_ERR_INVALID_PARAMETER);
 }
