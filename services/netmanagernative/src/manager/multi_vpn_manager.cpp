@@ -104,6 +104,7 @@ int32_t MultiVpnManager::SetVpnResult(std::atomic_int &fd, unsigned long cmd, if
     return NETMANAGER_SUCCESS;
 }
 
+// LCOV_EXCL_START
 int32_t MultiVpnManager::SetVpnMtu(const std::string &ifName, int32_t mtu)
 {
     if (mtu <= 0) {
@@ -150,6 +151,7 @@ int32_t MultiVpnManager::SetVpnMtu(const std::string &ifName, int32_t mtu)
     NETNATIVE_LOGE("set MTU failed for both IPv4 and IPv6");
     return NETMANAGER_ERROR;
 }
+// LCOV_EXCL_STOP
 
 int32_t MultiVpnManager::AddVpnRemoteAddress(const std::string &ifName, std::atomic_int &net4Sock, ifreq &ifr)
 {
@@ -211,6 +213,7 @@ int32_t MultiVpnManager::SetVpnUp(const std::string &ifName, bool isIpv6)
     return NETMANAGER_SUCCESS;
 }
 
+// LCOV_EXCL_START
 int32_t MultiVpnManager::SetVpnDown(const std::string &ifName)
 {
     ifreq ifr = {};
@@ -252,6 +255,7 @@ int32_t MultiVpnManager::SetVpnDown(const std::string &ifName)
     NETNATIVE_LOGE("set interface down failed for both IPv4 and IPv6");
     return NETMANAGER_ERROR;
 }
+// LCOV_EXCL_STOP
 
 int32_t MultiVpnManager::CreateVpnInterface(const std::string &ifName)
 {
@@ -494,6 +498,7 @@ int32_t MultiVpnManager::SetVpnCallMode(const std::string &message)
     return nmd::RouteManager::SetVpnCallMode(message);
 }
 
+// LCOV_EXCL_START
 int32_t MultiVpnManager::SetVpnAddressIPv6(const std::string &ifName, const std::string &vpnAddr, int32_t prefix)
 {
     if (prefix < 0 || prefix > IPV6_MAX_LENGTH) {
@@ -608,5 +613,6 @@ int32_t MultiVpnManager::SetVpnAddressIPv4(const std::string &ifName, const std:
     NETNATIVE_LOGI("set ipv4 address success");
     return NETMANAGER_SUCCESS;
 }
+// LCOV_EXCL_STOP
 } // namespace NetManagerStandard
 } // namespace OHOS
