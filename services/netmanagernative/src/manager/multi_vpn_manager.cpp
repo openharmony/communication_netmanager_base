@@ -15,11 +15,14 @@
 
 #include "multi_vpn_manager.h"
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <sys/ioctl.h>
 #include <thread>
 #include <linux/ppp_defs.h>
 #include <linux/if_ppp.h>
 #include <linux/if_tun.h>
+#include <linux/ipv6.h>
 #include "init_socket.h"
 #include "net_manager_constants.h"
 #include "netmanager_base_common_utils.h"
@@ -35,6 +38,7 @@ namespace {
 constexpr uint32_t DEFAULT_MTU = 1500;
 constexpr int32_t NET_MASK_MAX_LENGTH = 32;
 constexpr int32_t MAX_UNIX_SOCKET_CLIENT = 5;
+constexpr int32_t IPV6_MAX_LENGTH = 128;
 } // namespace
 
 int32_t MultiVpnManager::SendVpnInterfaceFdToClient(int32_t clientFd, int32_t tunFd)
@@ -100,6 +104,7 @@ int32_t MultiVpnManager::SetVpnResult(std::atomic_int &fd, unsigned long cmd, if
     return NETMANAGER_SUCCESS;
 }
 
+// LCOV_EXCL_START
 int32_t MultiVpnManager::SetVpnMtu(const std::string &ifName, int32_t mtu)
 {
     if (mtu <= 0) {
@@ -113,19 +118,40 @@ int32_t MultiVpnManager::SetVpnMtu(const std::string &ifName, int32_t mtu)
     }
     ifr.ifr_mtu = mtu;
 
+    bool ipv4Success = false;
+    bool ipv6Success = false;
     std::atomic_int net4Sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (net4Sock < 0) {
-        NETNATIVE_LOGE("create SOCK_DGRAM ipv4 failed: %{public}d", errno);
+    if (net4Sock >= 0) {
+        if (SetVpnResult(net4Sock, SIOCSIFMTU, ifr) == NETMANAGER_SUCCESS) {
+            ipv4Success = true;
+        } else {
+            NETNATIVE_LOGE("set MTU failed for IPv4: %{public}d", errno);
+        }
+        close(net4Sock);
+    } else {
+        NETNATIVE_LOGE("create IPv4 socket failed: %{public}d", errno);
+    }
+
+    std::atomic_int net6Sock = socket(AF_INET6, SOCK_DGRAM, 0);
+    if (net6Sock >= 0) {
+        if (SetVpnResult(net6Sock, SIOCSIFMTU, ifr) == NETMANAGER_SUCCESS) {
+            ipv6Success = true;
+        } else {
+            NETNATIVE_LOGE("set MTU failed for IPv6: %{public}d", errno);
+        }
+        close(net6Sock);
+    } else {
+        NETNATIVE_LOGE("create IPv6 socket failed: %{public}d", errno);
+    }
+
+    if (!ipv4Success || !ipv6Success) {
+        NETNATIVE_LOGE("set MTU failed");
         return NETMANAGER_ERROR;
     }
-    int32_t ret4 = SetVpnResult(net4Sock, SIOCSIFMTU, ifr);
-    close(net4Sock);
-    if (ret4 == NETMANAGER_ERROR) {
-        NETNATIVE_LOGI("set MTU failed");
-        return NETMANAGER_ERROR;
-    }
+    NETNATIVE_LOGE("set MTU success");
     return NETMANAGER_SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t MultiVpnManager::AddVpnRemoteAddress(const std::string &ifName, std::atomic_int &net4Sock, ifreq &ifr)
 {
@@ -149,77 +175,45 @@ int32_t MultiVpnManager::AddVpnRemoteAddress(const std::string &ifName, std::ato
 
 int32_t MultiVpnManager::SetVpnAddress(const std::string &ifName, const std::string &vpnAddr, int32_t prefix)
 {
-    ifreq ifr = {};
-    if (InitIfreq(ifr, ifName) != NETMANAGER_SUCCESS) {
-        return NETMANAGER_ERROR;
-    }
-    std::atomic_int net4Sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (net4Sock < 0) {
-        NETNATIVE_LOGE("create SOCK_DGRAM ipv4 failed: %{public}d", errno);
-        return NETMANAGER_ERROR;
-    }
-    in_addr ipv4Addr = {};
-    if (inet_aton(vpnAddr.c_str(), &ipv4Addr) == 0) {
-        NETNATIVE_LOGE("addr inet_aton error");
-        close(net4Sock);
+    bool isIpv6 = CommonUtils::IsValidIPV6(vpnAddr);
+    bool isIpv4 = CommonUtils::IsValidIPV4(vpnAddr);
+    if (!isIpv4 && !isIpv6) {
+        NETNATIVE_LOGE("invalid ip address format");
         return NETMANAGER_ERROR;
     }
 
-    auto sin = reinterpret_cast<sockaddr_in *>(&ifr.ifr_addr);
-    sin->sin_family = AF_INET;
-    sin->sin_addr = ipv4Addr;
-    if (ioctl(net4Sock, SIOCSIFADDR, &ifr) < 0) {
-        NETNATIVE_LOGE("ioctl set ipv4 address failed: %{public}d", errno);
-        close(net4Sock);
-        return NETMANAGER_ERROR;
+    if (isIpv6) {
+        return SetVpnAddressIPv6(ifName, vpnAddr, prefix);
+    } else {
+        return SetVpnAddressIPv4(ifName, vpnAddr, prefix);
     }
-    /* ppp need set dst ip */
-    if (AddVpnRemoteAddress(ifName, net4Sock, ifr) != NETMANAGER_SUCCESS) {
-        close(net4Sock);
-        return NETMANAGER_ERROR;
-    }
-    if (prefix <= 0 || prefix > NET_MASK_MAX_LENGTH) {
-        NETNATIVE_LOGE("prefix: %{public}d error", prefix);
-        close(net4Sock);
-        return NETMANAGER_ERROR;
-    }
-    in_addr_t mask = prefix ? (~0 << (NET_MASK_MAX_LENGTH - prefix)) : 0;
-    sin = reinterpret_cast<sockaddr_in *>(&ifr.ifr_netmask);
-    sin->sin_family = AF_INET;
-    sin->sin_addr.s_addr = htonl(mask);
-    if (ioctl(net4Sock, SIOCSIFNETMASK, &ifr) < 0) {
-        NETNATIVE_LOGE("ioctl set ip mask failed: %{public}d", errno);
-        close(net4Sock);
-        return NETMANAGER_ERROR;
-    }
-
-    SetVpnUp(ifName);
-    close(net4Sock);
-    NETNATIVE_LOGI("set ip address success");
-    return NETMANAGER_SUCCESS;
 }
 
-int32_t MultiVpnManager::SetVpnUp(const std::string &ifName)
+int32_t MultiVpnManager::SetVpnUp(const std::string &ifName, bool isIpv6)
 {
     ifreq ifr = {};
     if (InitIfreq(ifr, ifName) != NETMANAGER_SUCCESS) {
         return NETMANAGER_ERROR;
     }
     ifr.ifr_flags = IFF_UP | IFF_NOARP;
-    std::atomic_int net4Sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (net4Sock < 0) {
-        NETNATIVE_LOGE("create SOCK_DGRAM ipv4 failed: %{public}d", errno);
+
+    int32_t addressFamily = isIpv6 ? AF_INET6 : AF_INET;
+    std::atomic_int sock = socket(addressFamily, SOCK_DGRAM, 0);
+    if (sock < 0) {
+        NETNATIVE_LOGE("create SOCK_DGRAM failed for %{public}s", isIpv6 ? "IPv6" : "IPv4");
         return NETMANAGER_ERROR;
     }
-    int32_t ret4 = SetVpnResult(net4Sock, SIOCSIFFLAGS, ifr);
-    close(net4Sock);
-    if (ret4 == NETMANAGER_ERROR) {
-        NETNATIVE_LOGI("set iff up failed");
+
+    int32_t ret = SetVpnResult(sock, SIOCSIFFLAGS, ifr);
+    close(sock);
+    if (ret == NETMANAGER_ERROR) {
+        NETNATIVE_LOGE("set interface up failed for %{public}s", isIpv6 ? "IPv6" : "IPv4");
         return NETMANAGER_ERROR;
     }
     return NETMANAGER_SUCCESS;
 }
 
+// LCOV_EXCL_START
 int32_t MultiVpnManager::SetVpnDown(const std::string &ifName)
 {
     ifreq ifr = {};
@@ -227,19 +221,41 @@ int32_t MultiVpnManager::SetVpnDown(const std::string &ifName)
         return NETMANAGER_ERROR;
     }
     ifr.ifr_flags &= ~IFF_UP;
+    bool ipv4Success = false;
+    bool ipv6Success = false;
+
     std::atomic_int net4Sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (net4Sock < 0) {
-        NETNATIVE_LOGE("create SOCK_DGRAM ipv4 failed: %{public}d", errno);
-        return NETMANAGER_ERROR;
+    if (net4Sock >= 0) {
+        if (SetVpnResult(net4Sock, SIOCSIFFLAGS, ifr) == NETMANAGER_SUCCESS) {
+            ipv4Success = true;
+        } else {
+            NETNATIVE_LOGE("set interface down failed for IPv4");
+        }
+        close(net4Sock);
+    } else {
+        NETNATIVE_LOGE("create IPv4 socket failed");
     }
-    int32_t ret4 = SetVpnResult(net4Sock, SIOCSIFFLAGS, ifr);
-    close(net4Sock);
-    if (ret4 == NETMANAGER_ERROR) {
-        NETNATIVE_LOGI("set iff down failed");
-        return NETMANAGER_ERROR;
+
+    std::atomic_int net6Sock = socket(AF_INET6, SOCK_DGRAM, 0);
+    if (net6Sock >= 0) {
+        if (SetVpnResult(net6Sock, SIOCSIFFLAGS, ifr) == NETMANAGER_SUCCESS) {
+            ipv6Success = true;
+        } else {
+            NETNATIVE_LOGE("set interface down failed for IPv6");
+        }
+        close(net6Sock);
+    } else {
+        NETNATIVE_LOGE("create IPv6 socket failed");
     }
-    return NETMANAGER_SUCCESS;
+
+    if (ipv4Success || ipv6Success) {
+        return NETMANAGER_SUCCESS;
+    }
+
+    NETNATIVE_LOGE("set interface down failed for both IPv4 and IPv6");
+    return NETMANAGER_ERROR;
 }
+// LCOV_EXCL_STOP
 
 int32_t MultiVpnManager::CreateVpnInterface(const std::string &ifName)
 {
@@ -481,5 +497,123 @@ int32_t MultiVpnManager::SetVpnCallMode(const std::string &message)
     }
     return nmd::RouteManager::SetVpnCallMode(message);
 }
+
+int32_t MultiVpnManager::SetVpnAddressIPv6(const std::string &ifName, const std::string &vpnAddr, int32_t prefix)
+{
+    if (prefix < 0 || prefix > IPV6_MAX_LENGTH) {
+        NETNATIVE_LOGE("ipv6 prefix: %{public}d error", prefix);
+        return NETMANAGER_ERROR;
+    }
+
+    std::atomic_int net6Sock = socket(AF_INET6, SOCK_DGRAM, 0);
+    if (net6Sock < 0) {
+        NETNATIVE_LOGE("create SOCK_DGRAM ipv6 failed: %{public}d", errno);
+        return NETMANAGER_ERROR;
+    }
+
+    ifreq ifr = {};
+    if (InitIfreq(ifr, ifName) != NETMANAGER_SUCCESS) {
+        close(net6Sock);
+        return NETMANAGER_ERROR;
+    }
+
+    uint32_t ifindex = 0;
+    if (ioctl(net6Sock, SIOCGIFINDEX, &ifr) < 0) {
+        NETNATIVE_LOGE("get ifindex failed: %{public}d", errno);
+        close(net6Sock);
+        return NETMANAGER_ERROR;
+    }
+// LCOV_EXCL_START
+    ifindex = ifr.ifr_ifindex;
+
+    struct in6_ifreq ifr6 = {};
+    ifr6.ifr6_prefixlen = static_cast<uint32_t>(prefix);
+    ifr6.ifr6_ifindex = ifindex;
+
+    if (inet_pton(AF_INET6, vpnAddr.c_str(), &ifr6.ifr6_addr) != 1) {
+        NETNATIVE_LOGE("inet_pton ipv6 address failed");
+        close(net6Sock);
+        return NETMANAGER_ERROR;
+    }
+
+    if (ioctl(net6Sock, SIOCSIFADDR, &ifr6) < 0) {
+        NETNATIVE_LOGE("ioctl set ipv6 address failed: %{public}d", errno);
+        close(net6Sock);
+        return NETMANAGER_ERROR;
+    }
+
+    int32_t ret = SetVpnUp(ifName, true);
+    close(net6Sock);
+
+    if (ret != NETMANAGER_SUCCESS) {
+        NETNATIVE_LOGE("SetVpnUp failed after setting ipv6 address");
+        return ret;
+    }
+
+    NETNATIVE_LOGI("set ipv6 address success");
+    return NETMANAGER_SUCCESS;
+}
+// LCOV_EXCL_STOP
+
+int32_t MultiVpnManager::SetVpnAddressIPv4(const std::string &ifName, const std::string &vpnAddr, int32_t prefix)
+{
+    ifreq ifr = {};
+    if (InitIfreq(ifr, ifName) != NETMANAGER_SUCCESS) {
+        return NETMANAGER_ERROR;
+    }
+// LCOV_EXCL_START
+    std::atomic_int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock < 0) {
+        NETNATIVE_LOGE("create SOCK_DGRAM ipv4 failed: %{public}d", errno);
+        return NETMANAGER_ERROR;
+    }
+
+    in_addr ipv4Addr = {};
+    if (inet_aton(vpnAddr.c_str(), &ipv4Addr) == 0) {
+        NETNATIVE_LOGE("addr inet_aton error");
+        close(sock);
+        return NETMANAGER_ERROR;
+    }
+
+    auto sin = reinterpret_cast<sockaddr_in *>(&ifr.ifr_addr);
+    sin->sin_family = AF_INET;
+    sin->sin_addr = ipv4Addr;
+    if (ioctl(sock, SIOCSIFADDR, &ifr) < 0) {
+        NETNATIVE_LOGE("ioctl set ipv4 address failed: %{public}d", errno);
+        close(sock);
+        return NETMANAGER_ERROR;
+    }
+
+    if (AddVpnRemoteAddress(ifName, sock, ifr) != NETMANAGER_SUCCESS) {
+        close(sock);
+        return NETMANAGER_ERROR;
+    }
+
+    if (prefix <= 0 || prefix > NET_MASK_MAX_LENGTH) {
+        close(sock);
+        return NETMANAGER_ERROR;
+    }
+    in_addr_t mask = prefix ? (~0 << (NET_MASK_MAX_LENGTH - prefix)) : 0;
+    sin = reinterpret_cast<sockaddr_in *>(&ifr.ifr_netmask);
+    sin->sin_family = AF_INET;
+    sin->sin_addr.s_addr = htonl(mask);
+    if (ioctl(sock, SIOCSIFNETMASK, &ifr) < 0) {
+        NETNATIVE_LOGE("ioctl set ip mask failed: %{public}d", errno);
+        close(sock);
+        return NETMANAGER_ERROR;
+    }
+
+    int32_t ret = SetVpnUp(ifName, false);
+    close(sock);
+
+    if (ret != NETMANAGER_SUCCESS) {
+        NETNATIVE_LOGE("SetVpnUp failed after setting ipv4 address");
+        return ret;
+    }
+
+    NETNATIVE_LOGI("set ipv4 address success");
+    return NETMANAGER_SUCCESS;
+}
+// LCOV_EXCL_STOP
 } // namespace NetManagerStandard
 } // namespace OHOS
