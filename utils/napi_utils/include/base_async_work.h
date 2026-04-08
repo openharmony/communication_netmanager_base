@@ -55,14 +55,10 @@ public:
     static void AsyncWorkCallback(napi_env env, napi_status status, void *data)
     {
         static_assert(std::is_base_of<BaseContext, Context>::value);
-        if (data == nullptr) {
-            return;
-        }
+        if (data == nullptr) { return; }
         auto deleter = [](Context *context) { delete context; };
         std::unique_ptr<Context, decltype(deleter)> context(static_cast<Context *>(data), deleter);
-        if (status != napi_ok) {
-            return;
-        }
+        if (status != napi_ok) { return; }
         if (reinterpret_cast<BaseContext *>(data)->magic_ != BASE_CONTEXT_MAGIC_NUMBER) {
             NETMANAGER_BASE_LOGE("data has been destructed.");
             return;
@@ -74,12 +70,10 @@ public:
             baseContext->GetDeferred() != baseContext->deferredBack4_) {
             return;
         }
-
         size_t argc = 2;
         napi_value argv[2] = {nullptr};
         if (context->IsExecOK()) {
             argv[0] = NapiUtils::GetUndefined(env);
-
             if (Callback != nullptr) {
                 argv[1] = Callback(context.get());
             } else {
@@ -92,14 +86,11 @@ public:
         } else {
             argv[0] = NapiUtils::CreateErrorMessage(env, context->GetErrorCode(), context->GetErrorMessage());
             if (argv[0] == nullptr) {
-                NETMANAGER_BASE_LOGE("AsyncWorkName %{public}s createErrorMessage fail",
-                                     context->GetAsyncWorkName().c_str());
+                NETMANAGER_BASE_LOGE("AsyncWorkName %{public}s fail", context->GetAsyncWorkName().c_str());
                 return;
             }
-
             argv[1] = NapiUtils::GetUndefined(env);
         }
-
         if (context->GetDeferred() != nullptr) {
             if (context->IsExecOK()) {
                 napi_resolve_deferred(env, context->GetDeferred(), argv[1]);
@@ -108,7 +99,6 @@ public:
             }
             return;
         }
-
         napi_value func = context->GetCallback();
         napi_value undefined = NapiUtils::GetUndefined(env);
         (void)NapiUtils::CallFunction(env, undefined, func, argc, argv);
