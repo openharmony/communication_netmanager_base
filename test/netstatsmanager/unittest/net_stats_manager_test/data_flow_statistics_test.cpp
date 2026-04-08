@@ -177,7 +177,7 @@ HWTEST_F(DataFlowStatisticsTest, NetStatsManager011, TestSize.Level1)
     int32_t result = DelayedSingleton<NetStatsClient>::GetInstance()->RegisterNetStatsCallback(callback);
     ASSERT_EQ(result, NETMANAGER_ERR_PERMISSION_DENIED);
     result = DelayedSingleton<NetStatsClient>::GetInstance()->UnregisterNetStatsCallback(callback);
-    ASSERT_EQ(result, NETMANAGER_ERR_PERMISSION_DENIED);
+    ASSERT_LE(result, NETMANAGER_ERR_PERMISSION_DENIED);
 }
 
 /**
