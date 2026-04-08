@@ -56,10 +56,10 @@ ani_constructor!(
     ]
     class "@ohos.net.connection.connection.NetConnectionInner"
     [
-        "onNetAvailable": connection::on_net_available,
+        "onNetAvailableInner": connection::on_net_available,
         "onNetBlockStatusChangeInner": connection::on_net_block_status_change,
-        "onNetCapabilitiesChange": connection::on_net_capabilities_change,
-        "onNetConnectionPropertiesChange": connection::on_net_connection_properties_change,
+        "onNetCapabilitiesChangeInner": connection::on_net_capabilities_change,
+        "onNetConnectionPropertiesChangeInner": connection::on_net_connection_properties_change,
         "onNetLostInner": connection::on_net_lost,
         "onNetUnavailableInner": connection::on_net_unavailable,
         "registerSync" : connection::register_network_change,
