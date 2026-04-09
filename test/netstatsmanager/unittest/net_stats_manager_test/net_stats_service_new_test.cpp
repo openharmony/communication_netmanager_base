@@ -496,6 +496,24 @@ HWTEST_F(NetStatsServiceTest, NotifyTrafficAlertFfrtTest001, TestSize.Level1)
     ret = netStatsService2.NotifyTrafficAlertFfrt(simId, flag);
     EXPECT_EQ(ret, 0);
 }
+
+HWTEST_F(NetStatsServiceTest, UpdateCurActiviteSimChangedTest001, TestSize.Level1)
+{
+    NetStatsService netStatsService;
+    int32_t simId = 10;
+    uint64_t index = 12;
+    netStatsService.trafficPlanFfrtQueue_ = std::make_shared<ffrt::queue>("TrafficPlanStatistic");
+    netStatsService.UpdateCurActiviteSimChanged(simId, index);
+    bool ret = netStatsService.settingsTrafficMap_.find(simId) == netStatsService.settingsTrafficMap_.end() ? true : false
+
+    ObserverPtr trafficDataObserver = std::make_shared<TrafficDataObserver>(simId);
+    SettingsInfoPtr trafficSettingsInfo = std::make_shared<TrafficSettingsInfo>();
+    trafficDataObserver->ReadTrafficDataSettings(trafficSettingsInfo);
+    netStatsService.settingsTrafficMap_.insert(
+        std::make_pair(simId, std::make_pair(trafficDataObserver, trafficSettingsInfo)));
+    netStatsService.UpdateCurActiviteSimChanged(simId, index);
+    EXPECT_EQ(ret, true);
+}
 #endif
 } // namespace NetManagerStandard
 } // namespace OHOS
