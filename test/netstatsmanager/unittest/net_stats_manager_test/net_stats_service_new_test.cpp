@@ -504,7 +504,8 @@ HWTEST_F(NetStatsServiceTest, UpdateCurActiviteSimChangedTest001, TestSize.Level
     uint64_t index = 12;
     netStatsService.trafficPlanFfrtQueue_ = std::make_shared<ffrt::queue>("TrafficPlanStatistic");
     netStatsService.UpdateCurActiviteSimChanged(simId, index);
-    bool ret = netStatsService.settingsTrafficMap_.find(simId) == netStatsService.settingsTrafficMap_.end() ? true : false
+    bool ret =
+        netStatsService.settingsTrafficMap_.find(simId) == netStatsService.settingsTrafficMap_.end() ? true : false;
 
     ObserverPtr trafficDataObserver = std::make_shared<TrafficDataObserver>(simId);
     SettingsInfoPtr trafficSettingsInfo = std::make_shared<TrafficSettingsInfo>();
