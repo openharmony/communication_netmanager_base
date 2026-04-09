@@ -120,6 +120,7 @@ private:
     std::atomic_bool isPhyNetCreated_ = false;
     std::atomic_bool isVirtualCreated_ = false;
     std::shared_ptr<NetMonitor> netMonitor_ = nullptr;
+    std::shared_mutex netMonitorMutex_;
     NetDetectionHandler netCallback_ = nullptr;
     NetBearType netSupplierType_;
     bool isInternalDefault_ = false;
