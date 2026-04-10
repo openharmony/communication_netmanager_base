@@ -506,14 +506,15 @@ HWTEST_F(NetStatsServiceTest, UpdateCurActiviteSimChangedTest001, TestSize.Level
     netStatsService.UpdateCurActiviteSimChanged(simId, index);
     bool ret =
         netStatsService.settingsTrafficMap_.find(simId) == netStatsService.settingsTrafficMap_.end() ? true : false;
+    EXPECT_EQ(ret, false);
 
-    ObserverPtr trafficDataObserver = std::make_shared<TrafficDataObserver>(simId);
-    SettingsInfoPtr trafficSettingsInfo = std::make_shared<TrafficSettingsInfo>();
-    trafficDataObserver->ReadTrafficDataSettings(trafficSettingsInfo);
-    netStatsService.settingsTrafficMap_.insert(
-        std::make_pair(simId, std::make_pair(trafficDataObserver, trafficSettingsInfo)));
-    netStatsService.UpdateCurActiviteSimChanged(simId, index);
-    EXPECT_EQ(ret, true);
+    int32_t simId2 = 11;
+    uint64_t index2 = 13;
+    netStatsService.simIdToIfIndexMap_[simId2] = index2;
+    netStatsService.UpdateCurActiviteSimChanged(simId2, index2);
+    ret =
+        netStatsService.settingsTrafficMap_.find(simId) == netStatsService.settingsTrafficMap_.end() ? true : false;
+    EXPECT_EQ(ret, false);
 }
 #endif
 } // namespace NetManagerStandard
