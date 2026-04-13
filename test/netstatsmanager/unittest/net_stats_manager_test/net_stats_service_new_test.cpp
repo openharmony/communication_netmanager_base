@@ -496,6 +496,102 @@ HWTEST_F(NetStatsServiceTest, NotifyTrafficAlertFfrtTest001, TestSize.Level1)
     ret = netStatsService2.NotifyTrafficAlertFfrt(simId, flag);
     EXPECT_EQ(ret, 0);
 }
+
+HWTEST_F(NetStatsServiceTest, UpdateCurActiviteSimChangedTest001, TestSize.Level1)
+{
+    NetStatsService netStatsService;
+    int32_t simId = 10;
+    uint64_t index = 12;
+    netStatsService.trafficPlanFfrtQueue_ = std::make_shared<ffrt::queue>("TrafficPlanStatistic");
+    netStatsService.UpdateCurActiviteSimChanged(simId, index);
+    bool ret =
+        netStatsService.settingsTrafficMap_.find(simId) == netStatsService.settingsTrafficMap_.end() ? true : false;
+    EXPECT_EQ(ret, false);
+
+    int32_t simId2 = 11;
+    uint64_t index2 = 13;
+    netStatsService.simIdToIfIndexMap_[simId2] = index2;
+    netStatsService.UpdateCurActiviteSimChanged(simId2, index2);
+    ret =
+        netStatsService.settingsTrafficMap_.find(simId) == netStatsService.settingsTrafficMap_.end() ? true : false;
+    EXPECT_EQ(ret, false);
+}
+
+HWTEST_F(NetStatsServiceTest, UpdateCurActiviteSimChangedTest002, TestSize.Level1)
+{
+    NetStatsService netStatsService;
+    int32_t simId = 0;
+    ObserverPtr trafficDataObserver = std::make_shared<TrafficDataObserver>(simId);
+    SettingsInfoPtr trafficSettingsInfo = std::make_shared<TrafficSettingsInfo>();
+    trafficDataObserver->ReadTrafficDataSettings(trafficSettingsInfo);
+    netStatsService.settingsTrafficMap_.insert(
+        std::make_pair(simId, std::make_pair(trafficDataObserver, trafficSettingsInfo)));
+    netStatsService.settingsTrafficMap_[simId].second->monthlyLimit = UINT64_MAX;
+    netStatsService.settingsTrafficMap_[simId].second->unLimitedDataEnable = 0;
+ 
+    netStatsService.trafficPlanFfrtQueue_ = std::make_shared<ffrt::queue>("TrafficPlanStatistic");
+    netStatsService.UpdateCurActiviteSimChanged(simId, 10);
+    bool ret =
+        netStatsService.settingsTrafficMap_.find(simId) == netStatsService.settingsTrafficMap_.end() ? true : false;
+    EXPECT_EQ(ret, false);
+}
+ 
+HWTEST_F(NetStatsServiceTest, UpdateCurActiviteSimChangedTest003, TestSize.Level1)
+{
+    NetStatsService netStatsService;
+    int32_t simId = 0;
+    ObserverPtr trafficDataObserver = std::make_shared<TrafficDataObserver>(simId);
+    SettingsInfoPtr trafficSettingsInfo = std::make_shared<TrafficSettingsInfo>();
+    trafficDataObserver->ReadTrafficDataSettings(trafficSettingsInfo);
+    netStatsService.settingsTrafficMap_.insert(
+        std::make_pair(simId, std::make_pair(trafficDataObserver, trafficSettingsInfo)));
+    netStatsService.settingsTrafficMap_[simId].second->monthlyLimit = 132465789;
+    netStatsService.settingsTrafficMap_[simId].second->unLimitedDataEnable = 1;
+ 
+    netStatsService.trafficPlanFfrtQueue_ = std::make_shared<ffrt::queue>("TrafficPlanStatistic");
+    netStatsService.UpdateCurActiviteSimChanged(simId, 10);
+    bool ret =
+        netStatsService.settingsTrafficMap_.find(simId) == netStatsService.settingsTrafficMap_.end() ? true : false;
+    EXPECT_EQ(ret, false);
+}
+ 
+HWTEST_F(NetStatsServiceTest, UpdateCurActiviteSimChangedTest004, TestSize.Level1)
+{
+    NetStatsService netStatsService;
+    int32_t simId = 0;
+    ObserverPtr trafficDataObserver = std::make_shared<TrafficDataObserver>(simId);
+    SettingsInfoPtr trafficSettingsInfo = std::make_shared<TrafficSettingsInfo>();
+    trafficDataObserver->ReadTrafficDataSettings(trafficSettingsInfo);
+    netStatsService.settingsTrafficMap_.insert(
+        std::make_pair(simId, std::make_pair(trafficDataObserver, trafficSettingsInfo)));
+    netStatsService.settingsTrafficMap_[simId].second->monthlyLimit = UINT64_MAX;
+    netStatsService.settingsTrafficMap_[simId].second->unLimitedDataEnable = 1;
+ 
+    netStatsService.trafficPlanFfrtQueue_ = std::make_shared<ffrt::queue>("TrafficPlanStatistic");
+    netStatsService.UpdateCurActiviteSimChanged(simId, 10);
+    bool ret =
+        netStatsService.settingsTrafficMap_.find(simId) == netStatsService.settingsTrafficMap_.end() ? true : false;
+    EXPECT_EQ(ret, false);
+}
+ 
+HWTEST_F(NetStatsServiceTest, UpdateCurActiviteSimChangedTest005, TestSize.Level1)
+{
+    NetStatsService netStatsService;
+    int32_t simId = 0;
+    ObserverPtr trafficDataObserver = std::make_shared<TrafficDataObserver>(simId);
+    SettingsInfoPtr trafficSettingsInfo = std::make_shared<TrafficSettingsInfo>();
+    trafficDataObserver->ReadTrafficDataSettings(trafficSettingsInfo);
+    netStatsService.settingsTrafficMap_.insert(
+        std::make_pair(simId, std::make_pair(trafficDataObserver, trafficSettingsInfo)));
+    netStatsService.settingsTrafficMap_[simId].second->monthlyLimit = 132465789;
+    netStatsService.settingsTrafficMap_[simId].second->unLimitedDataEnable = 0;
+ 
+    netStatsService.trafficPlanFfrtQueue_ = std::make_shared<ffrt::queue>("TrafficPlanStatistic");
+    netStatsService.UpdateCurActiviteSimChanged(simId, 10);
+    bool ret =
+        netStatsService.settingsTrafficMap_.find(simId) == netStatsService.settingsTrafficMap_.end() ? true : false;
+    EXPECT_EQ(ret, false);
+}
 #endif
 } // namespace NetManagerStandard
 } // namespace OHOS
