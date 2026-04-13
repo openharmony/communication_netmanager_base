@@ -1675,6 +1675,7 @@ void NetStatsService::StopTrafficOvserver()
         return;
     }
 }
+// LCOV_EXCL_STOP
 
 void NetStatsService::UpdateCurActiviteSimChanged(int32_t simId, uint64_t ifIndex)
 {
@@ -1691,6 +1692,7 @@ void NetStatsService::UpdateCurActiviteSimChanged(int32_t simId, uint64_t ifInde
     }
 }
 
+// LCOV_EXCL_START
 bool NetStatsService::IsSimIdExist(int32_t simId)
 {
     std::shared_lock<ffrt::shared_mutex> lock(simIdToIfIndexMapMutex_);
