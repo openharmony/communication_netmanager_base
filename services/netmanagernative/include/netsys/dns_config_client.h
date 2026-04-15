@@ -118,6 +118,12 @@ struct AddrInfo {
     char aiCanonName[MAX_CANON_NAME + 1];
 };
 
+struct DnsServerInfo {
+    int queryProtocol;
+    uint32_t aiFamily;
+    char addr[MAX_SERVER_LENGTH + 1];
+};
+
 struct DnsAns {
     struct addrinfo *ai;
     uint32_t ttl;
@@ -141,7 +147,16 @@ struct QueryParam {
     int32_t netId;
     int32_t mark;
     int32_t flags;
+    long long queryTime;
     FuncNetDnsqueryHook qHook;
+};
+
+struct DnsResultPollParam {
+    int sockFd;
+    int queryRet;
+    int32_t resNum;
+    int32_t dnsServerNum;
+    struct QueryParam *param;
 };
 
 struct FamilyQueryInfo {

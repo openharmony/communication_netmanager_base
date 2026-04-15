@@ -49,7 +49,8 @@ public:
 
     // for net_conn_service
     int32_t ReportDnsResult(uint16_t netId, uint16_t uid, uint32_t pid, int32_t usedtime, char* name,
-                            uint32_t size, int32_t failreason, QueryParam param, AddrInfo* addrinfo);
+                            uint32_t size, int32_t failreason, QueryParam param, AddrInfo* addrinfo,
+                            uint32_t serverSize, DnsServerInfo* dnsseverinfo);
 
     int32_t ReportDnsQueryResult(PostDnsQueryParam queryParam, AddrInfo* addrinfo, uint8_t addrSize);
 
@@ -108,6 +109,7 @@ private:
     int32_t ParseDnsQueryReportAddr(uint8_t size,
         AddrInfo* addrinfo, NetsysNative::NetDnsQueryResultReport &report);
     int32_t handle_dns_abnormal(std::shared_ptr<DnsAbnormalInfo> abnormalInfo);
+    void ParseDnsSever(uint32_t size, DnsServerInfo* serverInfo, NetsysNative::NetDnsResultReport &report);
 };
 } // namespace OHOS::nmd
 #endif // NETSYS_DNS_QUALITY_DIAG_H

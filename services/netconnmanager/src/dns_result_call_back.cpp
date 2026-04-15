@@ -29,7 +29,6 @@ enum DnsFailReason {
 int32_t NetDnsResultCallback::OnDnsResultReport(uint32_t size,
     const std::list<NetsysNative::NetDnsResultReport> netDnsResultReport)
 {
-    NETMGR_LOG_D("Dns Result Report interface is called");
     netDnsResult_.Clear();
     IterateDnsReportResults(netDnsResultReport);
     netDnsResult_.Iterate([this](int32_t netid, NetDnsResult dnsResult) {
