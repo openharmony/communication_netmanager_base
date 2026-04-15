@@ -84,6 +84,21 @@ HWTEST_F(DnsQualityDiagTest, ParseReportAddr_ShouldAddIPv4AndIPv6_WhenCalledWith
     EXPECT_EQ(returnCode, 0);
 }
 
+HWTEST_F(DnsQualityDiagTest, ParseDnsSever001, TestSize.Level0)
+{
+    NetsysNative::NetDnsResultReport reportTest;
+    uint32_t size = 2;
+    struct DnsServerInfo serverInfoV4;
+    struct DnsServerInfo serverInfoV6;
+    serverInfoV4.aiFamily = AF_INET;
+    serverInfoV4.queryProtocol = 1;
+    serverInfoV6.aiFamily = AF_INET6;
+    serverInfoV6.queryProtocol = 2;
+    struct DnsServerInfo serverInfo[2] = { serverInfoV4, serverInfoV6 };
+    dnsQualityDiag.ParseDnsSever(size, serverInfo, reportTest);
+    EXPECT_EQ(reportTest.serverlist_.size(), size);
+}
+
 HWTEST_F(DnsQualityDiagTest, ParseReportAddr_ShouldNotAddMoreThanMaxSize_WhenCalledWithMoreAddrInfo, TestSize.Level0)
 {
     uint32_t size = MAX_RESULT_SIZE + 1;
@@ -107,8 +122,9 @@ HWTEST_F(DnsQualityDiagTest, ReportDnsResult_ShouldReturnZero_WhenCalled_01, Tes
     int32_t failreason = 0;
     QueryParam queryParam;
     AddrInfo addrinfo;
-    EXPECT_EQ(dnsQualityDiag.ReportDnsResult(netId, uid, pid, usedtime, name, size, failreason, queryParam, &addrinfo),
-              0);
+    DnsServerInfo serverinfo;
+    EXPECT_EQ(dnsQualityDiag.ReportDnsResult(netId, uid, pid, usedtime, name, size, failreason, queryParam, &addrinfo,
+        0, &serverinfo), 0);
 }
 
 HWTEST_F(DnsQualityDiagTest, ReportDnsResult_ShouldReturnZero_WhenCalled_02, TestSize.Level0)
@@ -122,8 +138,9 @@ HWTEST_F(DnsQualityDiagTest, ReportDnsResult_ShouldReturnZero_WhenCalled_02, Tes
     int32_t failreason = 1;
     QueryParam queryParam;
     AddrInfo addrinfo;
-    EXPECT_EQ(dnsQualityDiag.ReportDnsResult(netId, uid, pid, usedtime, name, size, failreason, queryParam, &addrinfo),
-              0);
+    DnsServerInfo serverinfo;
+    EXPECT_EQ(dnsQualityDiag.ReportDnsResult(netId, uid, pid, usedtime, name, size, failreason, queryParam, &addrinfo,
+        0, &serverinfo), 0);
 }
 
 HWTEST_F(DnsQualityDiagTest, ReportDnsResult_ShouldIgnore_WhenQueryTypeIsOne, TestSize.Level0)
@@ -138,9 +155,10 @@ HWTEST_F(DnsQualityDiagTest, ReportDnsResult_ShouldIgnore_WhenQueryTypeIsOne, Te
     QueryParam queryParam;
     queryParam.type = 1;
     AddrInfo addrinfo;
-
+    DnsServerInfo serverinfo;
     int32_t result =
-        dnsQualityDiag.ReportDnsResult(netId, uid, pid, usedtime, name, size, failreason, queryParam, &addrinfo);
+        dnsQualityDiag.ReportDnsResult(netId, uid, pid, usedtime, name, size, failreason, queryParam, &addrinfo,
+        0, &serverinfo);
     EXPECT_EQ(result, 0);
 }
 
@@ -396,8 +414,9 @@ HWTEST_F(DnsQualityDiagTest, add_dns_report_ShouldNotAddReport_WhenReportListIsF
     int32_t failreason = 1;
     QueryParam queryParam;
     AddrInfo addrinfo;
-    EXPECT_EQ(dnsQualityDiag.ReportDnsResult(netId, uid, pid, usedtime, name, size, failreason, queryParam, &addrinfo),
-              0);
+    DnsServerInfo serverinfo;
+    EXPECT_EQ(dnsQualityDiag.ReportDnsResult(netId, uid, pid, usedtime, name, size, failreason, queryParam,
+        &addrinfo, 0, &serverinfo), 0);
 }
 
 HWTEST_F(DnsQualityDiagTest, ReportDnsResult_ShouldIgnore_WhenFailCauseIsFirewallInterception, TestSize.Level0)
@@ -412,9 +431,10 @@ HWTEST_F(DnsQualityDiagTest, ReportDnsResult_ShouldIgnore_WhenFailCauseIsFirewal
     QueryParam queryParam;
     queryParam.type = 1;
     AddrInfo addrinfo;
- 
+    DnsServerInfo serverinfo;
     int32_t result =
-        dnsQualityDiag.ReportDnsResult(netId, uid, pid, usedtime, name, size, failreason, queryParam, &addrinfo);
+        dnsQualityDiag.ReportDnsResult(netId, uid, pid, usedtime, name, size, failreason, queryParam, &addrinfo,
+        0, &serverinfo);
     EXPECT_EQ(result, 0);
 }
 
