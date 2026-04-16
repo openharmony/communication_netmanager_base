@@ -368,6 +368,8 @@ void ConnectionModule::InitProperties(napi_env env, napi_value exports)
     
     InitFamilyTypes(env, exports);
 
+    InitSocks5DnsStrategyProperties(env, exports);
+
     std::initializer_list<napi_property_descriptor> conversionProcess = {
         DECLARE_CONVERSION_PROCESS(NO_CONFIGURATION),  DECLARE_CONVERSION_PROCESS(ALLOW_UNASSIGNED),
         DECLARE_CONVERSION_PROCESS(USE_STD3_ASCII_RULES)
@@ -383,6 +385,21 @@ void ConnectionModule::InitProperties(napi_env env, napi_value exports)
     napi_value packtypes = NapiUtils::CreateObject(env);
     NapiUtils::DefineProperties(env, packtypes, packetsType);
     NapiUtils::SetNamedProperty(env, exports, INTERFACE_PACKETS_TYPE, packtypes);
+}
+
+void ConnectionModule::InitSocks5DnsStrategyProperties(napi_env env, napi_value exports)
+{
+    std::initializer_list<napi_property_descriptor> socks5DnsStrategyType = {
+        DECLARE_NAPI_STATIC_PROPERTY(
+            "SYSTEM_MODE",
+            NapiUtils::CreateUint32(env, static_cast<uint32_t>(Socks5DnsStrategyType::SYSTEM_MODE))),
+        DECLARE_NAPI_STATIC_PROPERTY(
+            "PROXY_MODE",
+            NapiUtils::CreateUint32(env, static_cast<uint32_t>(Socks5DnsStrategyType::PROXY_MODE))),
+    };
+    napi_value socks5DnsStrategies = NapiUtils::CreateObject(env);
+    NapiUtils::DefineProperties(env, socks5DnsStrategies, socks5DnsStrategyType);
+    NapiUtils::SetNamedProperty(env, exports, INTERFACE_SOCKS5_DNS_STRATEGY, socks5DnsStrategies);
 }
 
 void ConnectionModule::InitTcpStates(napi_env env, napi_value exports)

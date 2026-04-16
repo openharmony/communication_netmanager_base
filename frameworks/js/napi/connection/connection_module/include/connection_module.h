@@ -27,6 +27,11 @@ enum NetConnectionType {
     PARAMETER_ERROR,
 };
 
+enum Socks5DnsStrategyType {
+    SYSTEM_MODE = 0,
+    PROXY_MODE = 1,
+};
+
 class ConnectionModule final {
 public:
     static constexpr const char *FUNCTION_GET_DEFAULT_NET = "getDefaultNet";
@@ -100,6 +105,7 @@ public:
     static constexpr const char *FUNCTION_QUERY_PROBE_RESULT = "queryProbeResult";
     static constexpr const char *FUNCTION_QUERY_TRACE_ROUTE = "queryTraceRoute";
     static constexpr const char *INTERFACE_PACKETS_TYPE = "PacketsType";
+    static constexpr const char *INTERFACE_SOCKS5_DNS_STRATEGY = "Socks5DnsStrategy";
 
     static napi_value InitConnectionModule(napi_env env, napi_value exports);
     static std::initializer_list<napi_property_descriptor> createPropertyList();
@@ -133,6 +139,7 @@ private:
     static void InitTcpStates(napi_env env, napi_value exports);
     static void InitProtocolTypeProperties(napi_env env, napi_value exports);
     static void InitFamilyTypes(napi_env env, napi_value exports);
+    static void InitSocks5DnsStrategyProperties(napi_env env, napi_value exports);
 
     static napi_value GetDefaultNet(napi_env env, napi_callback_info info);
     static napi_value GetDefaultNetSync(napi_env env, napi_callback_info info);
