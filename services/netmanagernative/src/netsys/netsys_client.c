@@ -451,11 +451,11 @@ int32_t FillBasicDnsServerInfo(struct DnsServerInfo *serverInfo, struct dnsserve
     serverInfo->queryProtocol = ds->query_protocol;
     serverInfo->aiFamily = sa->sa_family;
     if (sa->sa_family == AF_INET) {
-        struct sockaddr_in *sa_in = (struct sockaddr_in *)sa;
-        inet_ntop(AF_INET, &(sa_in->sin_addr), serverInfo->addr, MAX_SERVER_LENGTH);
+        struct sockaddr_in *saIn = (struct sockaddr_in *)sa;
+        inet_ntop(AF_INET, &(saIn->sin_addr), serverInfo->addr, MAX_SERVER_LENGTH);
     } else if (sa->sa_family == AF_INET6) {
-        struct sockaddr_in6 *sa_in6 = (struct sockaddr_in6 *)sa;
-        inet_ntop(AF_INET6, &(sa_in6->sin6_addr), serverInfo->addr, MAX_SERVER_LENGTH);
+        struct sockaddr_in6 *saIn6 = (struct sockaddr_in6 *)sa;
+        inet_ntop(AF_INET6, &(saIn6->sin6_addr), serverInfo->addr, MAX_SERVER_LENGTH);
     }
     return 0;
 }
