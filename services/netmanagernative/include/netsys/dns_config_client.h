@@ -147,7 +147,7 @@ struct QueryParam {
     int32_t netId;
     int32_t mark;
     int32_t flags;
-    long long queryTime;
+    int64_t queryTime;
     FuncNetDnsqueryHook qHook;
 };
 
