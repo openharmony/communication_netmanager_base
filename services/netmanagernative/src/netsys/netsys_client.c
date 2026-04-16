@@ -472,12 +472,7 @@ int32_t FillDnsServerInfo(struct DnsServerInfo dnsServerInfo[static MAX_RESULTS]
         if (resNum < MAX_RESULTS && FillBasicDnsServerInfo(&dnsServerInfo[resNum], tmp) == 0) {
             resNum++;
         }
-        if (tmp->sa != NULL) {
-            free(tmp->sa);
-            tmp->sa = NULL;
-        }
         // LCOV_EXCL_STOP
-        free(tmp);
         tmp = next;
     }
     return resNum;
