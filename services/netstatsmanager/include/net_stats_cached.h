@@ -321,7 +321,7 @@ private:
 
     static constexpr uint32_t DEFAULT_CACHE_CYCLE_MS = 30 * 60 * 1000;
     static constexpr uint64_t DEFAULT_TRAFFIC_STATISTICS_THRESHOLD_BYTES = 2 * 1024 * 1024;
-    static constexpr uint64_t DEFAULT_DATA_CYCLE_S = 180 * 24 * 60 * 60;
+    static constexpr uint64_t DEFAULT_DATA_CYCLE_S = 90 * 24 * 60 * 60;
     static constexpr uint64_t CACHE_DATE_TIME_S = 1 * 24 * 60 * 60;
     static constexpr uint64_t STATS_PACKET_CYCLE_MS = 1 * 60 * 60 * 1000;
 
