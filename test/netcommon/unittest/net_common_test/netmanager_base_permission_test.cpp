@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 
 #include "netmanager_base_permission.h"
+#include "netmanager_base_test_security.h"
 
 namespace OHOS {
 namespace NetManagerStandard {
@@ -49,6 +50,28 @@ HWTEST_F(NetManagerPermissionTest, CheckPermissionWithCacheTest001, TestSize.Lev
 {
     auto ret = NetManagerPermission::CheckPermissionWithCache({});
     EXPECT_FALSE(ret);
+}
+
+HWTEST_F(NetManagerPermissionTest, CheckPermissionWithCacheTest002, TestSize.Level1)
+{
+    NetManagerBaseNoPermissionToken token;
+
+    auto firstRet = NetManagerPermission::CheckPermissionWithCache(Permission::GET_NETWORK_INFO);
+    auto secondRet = NetManagerPermission::CheckPermissionWithCache(Permission::GET_NETWORK_INFO);
+
+    EXPECT_FALSE(firstRet);
+    EXPECT_FALSE(secondRet);
+}
+
+HWTEST_F(NetManagerPermissionTest, CheckPermissionWithCacheTest003, TestSize.Level1)
+{
+    NetManagerBaseAccessToken token;
+
+    auto firstRet = NetManagerPermission::CheckPermissionWithCache(Permission::GET_NETWORK_INFO);
+    auto secondRet = NetManagerPermission::CheckPermissionWithCache(Permission::GET_NETWORK_INFO);
+
+    EXPECT_TRUE(firstRet);
+    EXPECT_TRUE(secondRet);
 }
 
 HWTEST_F(NetManagerPermissionTest, IsSystemCallerTest001, TestSize.Level1)
