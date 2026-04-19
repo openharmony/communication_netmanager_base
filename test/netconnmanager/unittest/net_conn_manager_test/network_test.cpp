@@ -866,6 +866,44 @@ HWTEST_F(NetworkTest, DelayStartDetectionTest002, TestSize.Level1)
     }
 }
 
+HWTEST_F(NetworkTest, DelayStartDetectionTest003, TestSize.Level1)
+{
+    int32_t netId = 1;
+    auto network = std::make_shared<Network>(netId, netId, NetBearType::BEARER_CELLULAR, nullptr);
+    network->netMonitor_ = nullptr;
+    EXPECT_FALSE(network->DelayStartDetectionForIpUpdate(true));
+    network->InitNetMonitor();
+    network->InitNetMonitor();
+    network->StartNetDetection(true);
+    network->StartNetDetection(false);
+    network->StopNetDetection();
+    EXPECT_EQ(network->netMonitor_, nullptr);
+}
+ 
+HWTEST_F(NetworkTest, UpdateGlobalHttpProxyTest002, TestSize.Level1)
+{
+    int32_t netId = 1;
+    auto network = std::make_shared<Network>(netId, netId, NetBearType::BEARER_CELLULAR, nullptr);
+    network->netMonitor_ = nullptr;
+    network->UpdateGlobalHttpProxy(httpProxy);
+    network->InitNetMonitor();
+    network->UpdateGlobalHttpProxy(httpProxy);
+    network->StopNetDetection();
+    EXPECT_EQ(network->netMonitor_, nullptr);
+}
+ 
+HWTEST_F(NetworkTest, SetScreenStateTest003, TestSize.Level1)
+{
+    int32_t netId = 1;
+    auto network = std::make_shared<Network>(netId, netId, NetBearType::BEARER_CELLULAR, nullptr);
+    network->netMonitor_ = nullptr;
+    network->SetScreenState(true);
+    network->InitNetMonitor();
+    network->SetScreenState(true);
+    network->StopNetDetection();
+    EXPECT_EQ(network->netMonitor_, nullptr);
+}
+
 HWTEST_F(NetworkTest, IsNat464PreferedTest001, TestSize.Level1)
 {
     int32_t netId = 1;
