@@ -25,6 +25,7 @@
 
 namespace OHOS {
 namespace NetManagerStandard {
+using namespace Security::AccessToken;
 /**
  * @brief Permission check by callingTokenID.
  * @param permissionName permission name.
@@ -102,5 +103,21 @@ bool NetManagerPermission::CheckNetSysInternalPermission(const std::string &perm
     }
     return true;
 }
+
+// LCOV_EXCL_START
+int32_t NetManagerPermission::GetApiVersion()
+{
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+    ATokenTypeEnum callingType = AccessTokenKit::GetTokenTypeFlag(tokenId);
+    if (callingType != ATokenTypeEnum::TOKEN_HAP) {
+        return -1;
+    }
+    HapTokenInfo hapTokenInfo;
+    if (AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo) != AccessTokenKitRet::RET_SUCCESS) {
+        return -1;
+    }
+    return hapTokenInfo.apiVersion;
+}
+// LCOV_EXCL_STOP
 } // namespace NetManagerStandard
 } // namespace OHOS
