@@ -341,6 +341,8 @@ public:
 private:
     static std::mutex interfaceToTableLock_;
     static std::map<std::string, uint32_t> interfaceToTable_;
+    static std::string sharingTunv4Interface_;
+    static uint32_t sharingTunv4TableId_;
 #ifdef SUPPORT_SYSVPN
     enum VpnRuleIdType {
         VPN_OUTPUT_TO_LOCAL,

@@ -112,6 +112,8 @@ struct FibRuleUidRange {
 
 std::mutex RouteManager::interfaceToTableLock_;
 std::map<std::string, uint32_t> RouteManager::interfaceToTable_;
+std::string RouteManager::sharingTunv4Interface_ = "";
+uint32_t RouteManager::sharingTunv4TableId_ = 0;
 
 #ifdef SUPPORT_SYSVPN
 bool RouteManager::vpnSysCall_ = true;
@@ -1291,8 +1293,34 @@ int32_t RouteManager::UpdateOutputInterfaceRules(const std::string &interfaceNam
 int32_t RouteManager::UpdateSharingNetwork(uint16_t action, const std::string &inputInterface,
                                            const std::string &outputInterface)
 {
-    NETNATIVE_LOGI("UpdateSharingNetwork");
     uint32_t table = FindTableByInterfacename(outputInterface);
+
+    // When action is RTM_NEWRULE and output interface has prefix "tunv4-", record the tableId
+    if (action == RTM_NEWRULE && outputInterface.find("tunv4-") == 0) {
+        std::lock_guard lock(interfaceToTableLock_);
+        sharingTunv4Interface_ = outputInterface;
+        sharingTunv4TableId_ = table;
+        NETNATIVE_LOGI("UpdateSharingNetwork record tunv4 interface=%{public}s, tableId=%{public}u",
+            sharingTunv4Interface_.c_str(), sharingTunv4TableId_);
+    }
+
+    // When action is RTM_DELRULE and table is empty (RT_TABLE_UNSPEC), check if interface name matches
+    // the stored variable to get tableId and delete
+    if (action == RTM_DELRULE && table == RT_TABLE_UNSPEC) {
+        std::lock_guard lock(interfaceToTableLock_);
+        if (!sharingTunv4Interface_.empty() && outputInterface == sharingTunv4Interface_) {
+            table = sharingTunv4TableId_;
+            NETNATIVE_LOGI("UpdateSharingNetwork found matching tunv4 interface=%{public}s, tableId=%{public}u",
+                sharingTunv4Interface_.c_str(), table);
+            // Clear the stored variable after use
+            sharingTunv4Interface_ = "";
+            sharingTunv4TableId_ = 0;
+        } else {
+            NETNATIVE_LOGI("UpdateSharingNetwork table is RT_TABLE_UNSPEC and no matching tunv4 interface");
+            return -1;
+        }
+    }
+
     if (table == RT_TABLE_UNSPEC) {
         return -1;
     }
@@ -1304,7 +1332,6 @@ int32_t RouteManager::UpdateSharingNetwork(uint16_t action, const std::string &i
     ruleInfo.ruleMask = MARK_UNSET;
     ruleInfo.ruleIif = inputInterface;
     ruleInfo.ruleOif = RULEOIF_NULL;
-
     return UpdateRuleInfo(action, FR_ACT_TO_TBL, ruleInfo);
 }
 

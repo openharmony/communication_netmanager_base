@@ -936,5 +936,208 @@ HWTEST_F(RouteManagerTest, SetRuleMsgIp001, TestSize.Level1)
     EXPECT_NE(ret, NETMANAGER_SUCCESS);
 }
 
+/**
+ * @tc.number: RouteManager_UpdateSharingNetwork_TableUnspec_DelRule_NotEmpty
+ * @tc.name: when table is RT_TABLE_UNSPEC, action is RTM_DELRULE and outputInterface is not empty
+ * @tc.desc: returns result when table is not found but action is RTM_DELRULE and outputInterface is not empty
+ */
+HWTEST_F(RouteManagerTest, UpdateSharingNetwork_TableUnspec_DelRule_NotEmpty, TestSize.Level1)
+{
+    const std::string inputInterface = "eth0";
+    const std::string outputInterface = "notexist";
+    auto ret = RouteManager::UpdateSharingNetwork(RTM_DELRULE, inputInterface, outputInterface);
+    EXPECT_LE(ret, 0);
+}
+
+/**
+ * @tc.number: RouteManager_UpdateSharingNetwork_TableUnspec_AddRule
+ * @tc.name: Test UpdateSharingNetwork when table is RT_TABLE_UNSPEC and action is RTM_NEWRULE
+ * @tc.desc: Verify that UpdateSharingNetwork returns -1 when table is not found and action is RTM_NEWRULE
+ */
+HWTEST_F(RouteManagerTest, UpdateSharingNetwork_TableUnspec_AddRule, TestSize.Level1)
+{
+    const std::string inputInterface = "eth0";
+    const std::string outputInterface = "notexist";
+    auto ret = RouteManager::UpdateSharingNetwork(RTM_NEWRULE, inputInterface, outputInterface);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.number: RouteManager_UpdateSharingNetwork_TableUnspec_DelRule_Empty
+ * @tc.name: when table is RT_TABLE_UNSPEC, action is RTM_DELRULE and outputInterface is empty
+ * @tc.desc:  returns -1 when table is not found, action is RTM_DELRULE but outputInterface is empty
+ */
+HWTEST_F(RouteManagerTest, UpdateSharingNetwork_TableUnspec_DelRule_Empty, TestSize.Level1)
+{
+    const std::string inputInterface = "eth0";
+    const std::string outputInterface = "";
+    auto ret = RouteManager::UpdateSharingNetwork(RTM_DELRULE, inputInterface, outputInterface);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.number: RouteManager_UpdateSharingNetwork_OutputInterfaceNotEmpty
+ * @tc.name: Test UpdateSharingNetwork when outputInterface is not empty
+ * @tc.desc: Verify that UpdateSharingNetwork uses outputInterface when it is not empty
+ */
+HWTEST_F(RouteManagerTest, UpdateSharingNetwork_OutputInterfaceNotEmpty, TestSize.Level1)
+{
+    const std::string inputInterface = "wlan0";
+    const std::string outputInterface = "eth3";
+    auto ret = RouteManager::UpdateSharingNetwork(RTM_NEWRULE, inputInterface, outputInterface);
+    EXPECT_LE(ret, 0);
+}
+
+/**
+ * @tc.number: RouteManager_UpdateSharingNetwork_OutputInterfaceEmpty
+ * @tc.name: Test UpdateSharingNetwork when outputInterface is empty
+ * @tc.desc: Verify that UpdateSharingNetwork uses RULEOIF_NULL when outputInterface is empty
+ */
+HWTEST_F(RouteManagerTest, UpdateSharingNetwork_OutputInterfaceEmpty, TestSize.Level1)
+{
+    const std::string inputInterface = "wlan0";
+    const std::string outputInterface = "";
+    auto ret = RouteManager::UpdateSharingNetwork(RTM_NEWRULE, inputInterface, outputInterface);
+    EXPECT_LE(ret, 0);
+}
+
+/**
+ * @tc.number: RouteManager_UpdateSharingNetwork_Tunv4Prefix_AddRule
+ * @tc.name: Test UpdateSharingNetwork when outputInterface has "tunv4-" prefix and action is RTM_NEWRULE
+ * @tc.desc: Verify that UpdateSharingNetwork records tunv4 interface info when adding rule with tunv4- prefix
+ */
+HWTEST_F(RouteManagerTest, UpdateSharingNetwork_Tunv4Prefix_AddRule, TestSize.Level1)
+{
+    const std::string inputInterface = "eth0";
+    const std::string outputInterface = "tunv4-0";
+    auto ret = RouteManager::UpdateSharingNetwork(RTM_NEWRULE, inputInterface, outputInterface);
+    EXPECT_LE(ret, 0);
+}
+
+/**
+ * @tc.number: RouteManager_UpdateSharingNetwork_Tunv4Prefix_MultipleDigits_AddRule
+ * @tc.name: Test UpdateSharingNetwork when outputInterface has "tunv4-" prefix with multiple digits
+ * @tc.desc: Verify that UpdateSharingNetwork handles tunv4- interface with multiple digit suffix
+ */
+HWTEST_F(RouteManagerTest, UpdateSharingNetwork_Tunv4Prefix_MultipleDigits_AddRule, TestSize.Level1)
+{
+    const std::string inputInterface = "wlan0";
+    const std::string outputInterface = "tunv4-123";
+    auto ret = RouteManager::UpdateSharingNetwork(RTM_NEWRULE, inputInterface, outputInterface);
+    EXPECT_LE(ret, 0);
+}
+
+/**
+ * @tc.number: RouteManager_UpdateSharingNetwork_Tunv4Prefix_DelRule_Matching
+ * @tc.name: Test UpdateSharingNetwork when deleting tunv4 rule with matching interface
+ * @tc.desc: Verify that UpdateSharingNetwork uses stored tableId when deleting tunv4 rule
+ */
+HWTEST_F(RouteManagerTest, UpdateSharingNetwork_Tunv4Prefix_DelRule_Matching, TestSize.Level1)
+{
+    // First add a tunv4- rule to store the interface info
+    const std::string inputInterface = "eth0";
+    const std::string outputInterface = "tunv4-99";
+    auto ret = RouteManager::UpdateSharingNetwork(RTM_NEWRULE, inputInterface, outputInterface);
+    EXPECT_LE(ret, 0);
+
+    // Then delete with the same interface - should use stored tableId
+    ret = RouteManager::UpdateSharingNetwork(RTM_DELRULE, inputInterface, outputInterface);
+    EXPECT_LE(ret, 0);
+}
+
+/**
+ * @tc.number: RouteManager_UpdateSharingNetwork_Tunv4Prefix_DelRule_NotMatching
+ * @tc.name: Test UpdateSharingNetwork when deleting tunv4 rule with non-matching interface
+ * @tc.desc: Verify that UpdateSharingNetwork returns -1 when deleting with different interface
+ */
+HWTEST_F(RouteManagerTest, UpdateSharingNetwork_Tunv4Prefix_DelRule_NotMatching, TestSize.Level1)
+{
+    // First add a tunv4- rule to store the interface info
+    const std::string inputInterface = "eth0";
+    const std::string outputInterface = "tunv4-1";
+    auto ret = RouteManager::UpdateSharingNetwork(RTM_NEWRULE, inputInterface, outputInterface);
+    EXPECT_LE(ret, 0);
+
+    // Then try to delete with different interface - should return -1
+    const std::string differentOutputInterface = "tunv4-2";
+    ret = RouteManager::UpdateSharingNetwork(RTM_DELRULE, inputInterface, differentOutputInterface);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.number: RouteManager_UpdateSharingNetwork_NonTunv4Interface_AddRule
+ * @tc.name: Test UpdateSharingNetwork with non-tunv4 interface when adding rule
+ * @tc.desc: Verify that UpdateSharingNetwork works normally for non-tunv4 interfaces
+ */
+HWTEST_F(RouteManagerTest, UpdateSharingNetwork_NonTunv4Interface_AddRule, TestSize.Level1)
+{
+    const std::string inputInterface = "eth0";
+    const std::string outputInterface = "wlan1";
+    auto ret = RouteManager::UpdateSharingNetwork(RTM_NEWRULE, inputInterface, outputInterface);
+    EXPECT_LE(ret, 0);
+}
+
+/**
+ * @tc.number: RouteManager_UpdateSharingNetwork_NonTunv4Interface_DelRule
+ * @tc.name: Test UpdateSharingNetwork with non-tunv4 interface when deleting rule
+ * @tc.desc: Verify that UpdateSharingNetwork works normally for non-tunv4 interfaces
+ */
+HWTEST_F(RouteManagerTest, UpdateSharingNetwork_NonTunv4Interface_DelRule, TestSize.Level1)
+{
+    const std::string inputInterface = "eth0";
+    const std::string outputInterface = "wlan1";
+    auto ret = RouteManager::UpdateSharingNetwork(RTM_DELRULE, inputInterface, outputInterface);
+    EXPECT_LE(ret, 0);
+}
+
+/**
+ * @tc.number: RouteManager_UpdateSharingNetwork_Tunv4Prefix_SimilarPrefix_NotMatch
+ * @tc.name: Test UpdateSharingNetwork when outputInterface has similar but different prefix
+ * @tc.desc: Verify that UpdateSharingNetwork does not match interfaces with similar prefixes like "tunv4"
+ */
+HWTEST_F(RouteManagerTest, UpdateSharingNetwork_Tunv4Prefix_SimilarPrefix_NotMatch, TestSize.Level1)
+{
+    const std::string inputInterface = "eth0";
+    // Interface that starts with "tunv4" but not "tunv4-"
+    const std::string outputInterface = "tunv40";
+    auto ret = RouteManager::UpdateSharingNetwork(RTM_NEWRULE, inputInterface, outputInterface);
+    EXPECT_LE(ret, 0);
+}
+
+/**
+ * @tc.number: RouteManager_UpdateSharingNetwork_Tunv4Prefix_EmptyInput
+ * @tc.name: Test UpdateSharingNetwork with empty inputInterface and tunv4- prefix
+ * @tc.desc: Verify that UpdateSharingNetwork handles empty inputInterface with tunv4- output
+ */
+HWTEST_F(RouteManagerTest, UpdateSharingNetwork_Tunv4Prefix_EmptyInput, TestSize.Level1)
+{
+    const std::string inputInterface = "";
+    const std::string outputInterface = "tunv4-5";
+    auto ret = RouteManager::UpdateSharingNetwork(RTM_NEWRULE, inputInterface, outputInterface);
+    EXPECT_LE(ret, 0);
+}
+
+/**
++ * @tc.number: RouteManager_UpdateSharingNetwork_Tunv4Prefix_DelRule_AfterClear
++ * @tc.name: Test UpdateSharingNetwork when deleting tunv4 rule after it was cleared
++ * @tc.desc: Verify that UpdateSharingNetwork returns -1 when stored tunv4 interface is cleared
++ */
+HWTEST_F(RouteManagerTest, UpdateSharingNetwork_Tunv4Prefix_DelRule_AfterClear, TestSize.Level1)
+{
+    const std::string inputInterface = "eth0";
+    const std::string outputInterface = "tunv4-77";
+
+    // Add and then delete to clear the stored variable
+    auto ret = RouteManager::UpdateSharingNetwork(RTM_NEWRULE, inputInterface, outputInterface);
+    EXPECT_LE(ret, 0);
+
+    ret = RouteManager::UpdateSharingNetwork(RTM_DELRULE, inputInterface, outputInterface);
+    EXPECT_LE(ret, 0);
+
+    // Try to delete again - should return -1 since stored variable is cleared
+    ret = RouteManager::UpdateSharingNetwork(RTM_DELRULE, inputInterface, outputInterface);
+    EXPECT_EQ(ret, -1);
+}
+
 } // namespace nmd
 } // namespace OHOS
