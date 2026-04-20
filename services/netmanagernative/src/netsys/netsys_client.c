@@ -523,7 +523,7 @@ static int32_t FillDnsAns(struct AddrInfoWithTtl addrInfo[static MAX_RESULTS], s
     return resNum;
 }
 
-static int32_t FillQueryParam(struct queryparam *orig, struct QueryParam *dest, struct recordinfo *info)
+int32_t FillQueryParam(struct queryparam *orig, struct QueryParam *dest, struct recordinfo *info)
 {
     dest->type = orig->qp_type;
     dest->netId = orig->qp_netid;
