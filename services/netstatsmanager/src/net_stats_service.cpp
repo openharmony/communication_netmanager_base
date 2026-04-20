@@ -109,6 +109,7 @@ constexpr const uint64_t NET_STATS_REPORT_DELAY = static_cast<uint64_t>(2 * 60 *
 constexpr const int32_t HIVIEW_UID = 1201;
 constexpr const char *NET_STATS_CALLED_EVENT = "custom.event.NET_STATS_CALLED";
 constexpr const char *NET_STATS_CALL_INFO_KEY = "NET_STATS_CALL_INFO";
+constexpr int32_t API_VERSION_26 = 26;
 } // namespace
 const bool REGISTER_LOCAL_RESULT =
     SystemAbility::MakeAndRegisterAbility(DelayedSingleton<NetStatsService>::GetInstance().get());
@@ -636,16 +637,32 @@ int32_t NetStatsService::GetAllTxBytes(uint64_t &stats)
 
 int32_t NetStatsService::GetUidRxBytes(uint64_t &stats, uint32_t uid)
 {
-    NETMGR_LOG_D("Enter GetUidRxBytes, uid is %{public}d", uid);
+    uint32_t callingUid = IPCSkeleton::GetCallingUid();
+    int32_t version = NetManagerPermission::GetApiVersion();
+    NETMGR_LOG_D("Enter GetUidRxBytes, uid:%{public}d, version:%{public}d, callingUid:%{public}d",
+        uid, version, callingUid);
     RecordCallingData("GetUidRxBytes", uid);
+    if (uid != callingUid && version >= API_VERSION_26) {
+        if (!NetManagerPermission::CheckPermission(Permission::GET_NETWORK_STATS)) {
+            return NETMANAGER_ERR_PERMISSION_DENIED;
+        }
+    }
     return NetsysController::GetInstance().GetUidStats(stats, static_cast<uint32_t>(StatsType::STATS_TYPE_RX_BYTES),
                                                        uid);
 }
 
 int32_t NetStatsService::GetUidTxBytes(uint64_t &stats, uint32_t uid)
 {
-    NETMGR_LOG_D("Enter GetUidTxBytes,uid is %{public}d", uid);
+    uint32_t callingUid = IPCSkeleton::GetCallingUid();
+    int32_t version = NetManagerPermission::GetApiVersion();
+    NETMGR_LOG_D("Enter GetUidTxBytes, uid:%{public}d, version:%{public}d, callingUid:%{public}d",
+        uid, version, callingUid);
     RecordCallingData("GetUidTxBytes", uid);
+    if (uid != callingUid && version >= API_VERSION_26) {
+        if (!NetManagerPermission::CheckPermission(Permission::GET_NETWORK_STATS)) {
+            return NETMANAGER_ERR_PERMISSION_DENIED;
+        }
+    }
     return NetsysController::GetInstance().GetUidStats(stats, static_cast<uint32_t>(StatsType::STATS_TYPE_TX_BYTES),
                                                        uid);
 }
