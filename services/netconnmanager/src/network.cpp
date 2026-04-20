@@ -871,7 +871,7 @@ void Network::NetDetectionForDnsHealth(bool dnsHealthSuccess)
 void Network::StopNetDetection()
 {
     NETMGR_LOG_D("Enter StopNetDetection");
-    std::shared_lock<std::shared_mutex> lockMonitor(netMonitorMutex_);
+    std::unique_lock<std::shared_mutex> lockMonitor(netMonitorMutex_);
     if (netMonitor_ != nullptr) {
         netMonitor_->Stop();
         netMonitor_->StopDualStackProbe();
@@ -882,24 +882,26 @@ void Network::StopNetDetection()
 
 void Network::InitNetMonitor()
 {
-    std::shared_lock<std::shared_mutex> lockMonitor(netMonitorMutex_);
-    if (netMonitor_ == nullptr) {
-        NETMGR_LOG_I("InitNetMonitor");
-        std::weak_ptr<INetMonitorCallback> monitorCallback = shared_from_this();
-        std::shared_lock<std::shared_mutex> lock(netLinkInfoMutex_);
-        NetLinkInfo netLinkInfoBck = netLinkInfo_;
-        lock.unlock();
-        NetMonitorInfo netMonitorInfo;
-        netMonitorInfo.isScreenOn = isScreenOn_;
-        netMonitorInfo.lastDetectTime = lastDetectTime_;
-        netMonitor_ = std::make_shared<NetMonitor>(
-            netId_, netSupplierType_, netLinkInfoBck, monitorCallback, netMonitorInfo);
-        if (netMonitor_ == nullptr) {
-            NETMGR_LOG_E("new NetMonitor failed,netMonitor_ is null!");
-            return;
-        }
-        netMonitor_->UpdateDualStackProbeTime(dualStackProbeTime_);
+    std::unique_lock<std::shared_mutex> lockMonitor(netMonitorMutex_);
+    if (netMonitor_ != nullptr) {
+        netMonitor_->Start();
+        return;
     }
+    NETMGR_LOG_I("InitNetMonitor");
+    std::weak_ptr<INetMonitorCallback> monitorCallback = shared_from_this();
+    std::shared_lock<std::shared_mutex> lock(netLinkInfoMutex_);
+    NetLinkInfo netLinkInfoBck = netLinkInfo_;
+    lock.unlock();
+    NetMonitorInfo netMonitorInfo;
+    netMonitorInfo.isScreenOn = isScreenOn_;
+    netMonitorInfo.lastDetectTime = lastDetectTime_;
+    netMonitor_ = std::make_shared<NetMonitor>(
+        netId_, netSupplierType_, netLinkInfoBck, monitorCallback, netMonitorInfo);
+    if (netMonitor_ == nullptr) {
+        NETMGR_LOG_E("new NetMonitor failed,netMonitor_ is null!");
+        return;
+    }
+    netMonitor_->UpdateDualStackProbeTime(dualStackProbeTime_);
     netMonitor_->Start();
 }
 
@@ -1038,9 +1040,10 @@ void Network::ResetNetlinkInfo()
 void Network::UpdateGlobalHttpProxy(const HttpProxy &httpProxy)
 {
     std::shared_lock<std::shared_mutex> lockMonitor(netMonitorMutex_);
-    if (netMonitor_ != nullptr) {
-        StartNetDetection(true);
+    if (netMonitor_ == nullptr) {
+        return;
     }
+    StartNetDetection(true);
 }
 
 void Network::OnHandleNetMonitorResult(NetDetectionStatus netDetectionState, const std::string &urlRedirect)
@@ -1127,9 +1130,10 @@ void Network::SetScreenState(bool isScreenOn)
 {
     isScreenOn_ = isScreenOn;
     std::shared_lock<std::shared_mutex> lockMonitor(netMonitorMutex_);
-    if (netMonitor_ != nullptr) {
-        netMonitor_->SetScreenState(isScreenOn);
+    if (netMonitor_ == nullptr) {
+        return;
     }
+    netMonitor_->SetScreenState(isScreenOn);
 }
 
 int32_t Network::StartDualStackProbeThread()
