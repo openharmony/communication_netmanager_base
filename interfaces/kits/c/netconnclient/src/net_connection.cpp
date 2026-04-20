@@ -253,6 +253,29 @@ int32_t OH_NetConn_UnregisterDnsResolver()
     return ret;
 }
 
+int32_t OH_NetConn_RegisterCustomDnsResolver(OH_NetConn_CustomDnsResolver resolver)
+{
+    if (resolver == nullptr) {
+        NETMGR_LOG_E("OH_NetConn_RegisterCustomDnsResolver received invalid parameters");
+        return NETMANAGER_ERR_PARAMETER_ERROR;
+    }
+
+    int32_t ret = setcustomdnsresolver(resolver);
+    if (ret < 0) {
+        ret = NET_CONN_ERR_SAME_CALLBACK;
+    }
+    return ret;
+}
+
+int32_t OH_NetConn_UnregisterCustomDnsResolver()
+{
+    int32_t ret = removecustomdnsresolver();
+    if (ret != NETMANAGER_SUCCESS) {
+        ret = NETMANAGER_ERR_INTERNAL;
+    }
+    return ret;
+}
+
 int32_t OH_NetConn_BindSocket(int32_t socketFd, NetConn_NetHandle *netHandle)
 {
     if (netHandle == nullptr) {
