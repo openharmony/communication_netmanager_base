@@ -120,6 +120,10 @@ RetNetAddressArr CJ_GetAddressesByName(int32_t netId, const char *host)
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
+    if (host == nullptr) {
+        ret.code = NETMANAGER_ERR_INVALID_PARAMETER;
+        return ret;
+    }
     int status = getaddrinfo_ext(host, nullptr, &hints, &res, &param);
     if (status < 0) {
         ret.code = TransErrorCode(errno);
@@ -321,7 +325,7 @@ int32_t CJ_SetGlobalHttpProxy(CHttpProxy cHttpProxy)
     std::string host(cHttpProxy.host);
     std::string newHost = host;
     std::list<std::string> exclusionList;
-    for (uint32_t i = 0; i < cHttpProxy.exclusionListSize; ++i) {
+    for (int64_t i = 0; i < cHttpProxy.exclusionListSize; ++i) {
         std::string tmp(cHttpProxy.exclusionList[i]);
         std::string item = tmp;
         exclusionList.push_back(item);
