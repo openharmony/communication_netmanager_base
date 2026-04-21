@@ -44,6 +44,35 @@ bool NetDnsResultAddrInfo::Unmarshalling(Parcel &parcel, NetDnsResultAddrInfo &a
     return true;
 }
 
+bool NetDnsResultServerInfo::Marshalling(Parcel &parcel) const
+{
+    if (!parcel.WriteUint8(type_)) {
+        return false;
+    }
+    if (!parcel.WriteUint8(protocol_)) {
+        return false;
+    }
+    if (!parcel.WriteString(addr_)) {
+        return false;
+    }
+    return true;
+}
+ 
+ 
+bool NetDnsResultServerInfo::Unmarshalling(Parcel &parcel, NetDnsResultServerInfo &serverInfo)
+{
+    if (!parcel.ReadUint8(serverInfo.type_)) {
+        return false;
+    }
+    if (!parcel.ReadUint8(serverInfo.protocol_)) {
+        return false;
+    }
+    if (!parcel.ReadString(serverInfo.addr_)) {
+        return false;
+    }
+    return true;
+}
+
 bool NetDnsResultReport::Marshalling(Parcel &parcel) const
 {
     if (!parcel.WriteUint32(netid_)) {
@@ -64,10 +93,19 @@ bool NetDnsResultReport::Marshalling(Parcel &parcel) const
     if (!parcel.WriteString(host_)) {
         return false;
     }
+    if (!parcel.WriteUint64(querytime_)) {
+        return false;
+    }
     if (!parcel.WriteUint32(static_cast<uint32_t>(
         std::min(DNS_RESULT_MAX_SIZE, static_cast<uint32_t>(addrlist_.size()))))) {
         return false;
     }
+    // LCOV_EXCL_START
+    if (!parcel.WriteUint32(static_cast<uint32_t>(
+        std::min(DNS_RESULT_MAX_SIZE, static_cast<uint32_t>(serverlist_.size()))))) {
+        return false;
+    }
+    // LCOV_EXCL_STOP
     uint32_t count = 0;
     for (const auto &addr : addrlist_) {
         if (!addr.Marshalling(parcel)) {
@@ -77,6 +115,17 @@ bool NetDnsResultReport::Marshalling(Parcel &parcel) const
             break;
         }
     }
+    uint32_t serverCount = 0;
+    for (const auto &addr : serverlist_) {
+        if (!addr.Marshalling(parcel)) {
+            return false;
+        }
+        // LCOV_EXCL_START
+        if (++serverCount >= DNS_RESULT_MAX_SIZE) {
+            break;
+        }
+        // LCOV_EXCL_STOP
+    }
     return true;
 }
 
@@ -84,6 +133,7 @@ bool NetDnsResultReport::Marshalling(Parcel &parcel) const
 bool NetDnsResultReport::Unmarshalling(Parcel &parcel, NetDnsResultReport &resultReport)
 {
     std::list<NetDnsResultAddrInfo>().swap(resultReport.addrlist_);
+    std::vector<NetDnsResultServerInfo>().swap(resultReport.serverlist_);
 
     if (!parcel.ReadUint32(resultReport.netid_) || !parcel.ReadUint32(resultReport.uid_) ||
         !parcel.ReadUint32(resultReport.pid_) || !parcel.ReadUint32(resultReport.timeused_)) {
@@ -98,10 +148,19 @@ bool NetDnsResultReport::Unmarshalling(Parcel &parcel, NetDnsResultReport &resul
         return false;
     }
 
+    if (!parcel.ReadUint64(resultReport.querytime_)) {
+        return false;
+    }
     uint32_t size = 0;
     if (!parcel.ReadUint32(size)) {
         return false;
     }
+    uint32_t serverSize = 0;
+    // LCOV_EXCL_START
+    if (!parcel.ReadUint32(serverSize)) {
+        return false;
+    }
+    // LCOV_EXCL_STOP
     size = (size > DNS_RESULT_MAX_SIZE) ? DNS_RESULT_MAX_SIZE : size;
     for (uint32_t i = 0; i < size; ++i) {
         NetDnsResultAddrInfo addrInfo;
@@ -110,7 +169,15 @@ bool NetDnsResultReport::Unmarshalling(Parcel &parcel, NetDnsResultReport &resul
         }
         resultReport.addrlist_.push_back(addrInfo);
     }
-
+    // LCOV_EXCL_START
+    for (uint32_t i = 0; i < serverSize; ++i) {
+        NetDnsResultServerInfo serverInfo;
+        if (!NetDnsResultServerInfo::Unmarshalling(parcel, serverInfo)) {
+            return false;
+        }
+        resultReport.serverlist_.push_back(serverInfo);
+    }
+    // LCOV_EXCL_STOP
     return true;
 }
 
