@@ -254,7 +254,7 @@ int32_t ConnectionCallbackObserver::NetBlockStatusChange(sptr<NetHandle> &netHan
         return 0;
     }
     int32_t id = netHandle->GetNetId();
-    int len = static_cast<int64_t>(netConnection->second->netBlockStatusChange.size());
+    int len = static_cast<int>(netConnection->second->netBlockStatusChange.size());
     for (int i = 0; i < len; i++) {
         netConnection->second->netBlockStatusChange[i](id, blocked);
     }
