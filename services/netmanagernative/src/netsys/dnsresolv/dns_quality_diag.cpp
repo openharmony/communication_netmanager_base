@@ -95,8 +95,30 @@ int32_t DnsQualityDiag::ParseReportAddr(uint32_t size, AddrInfo* addrinfo, Netsy
     return 0;
 }
 
+void DnsQualityDiag::ParseDnsSever(uint32_t size, DnsServerInfo* serverInfo,
+    NetsysNative::NetDnsResultReport &report)
+{
+    for (uint8_t i = 0; i < size; i++) {
+        NetsysNative::NetDnsResultServerInfo ai;
+        DnsServerInfo *tmp = &(serverInfo[i]);
+        switch (tmp->aiFamily) {
+            case AF_INET:
+                ai.type_ = static_cast<uint32_t>(NetsysNative::ADDR_TYPE_IPV4);
+                break;
+            case AF_INET6:
+                ai.type_ = static_cast<uint32_t>(NetsysNative::ADDR_TYPE_IPV6);
+                break;
+        }
+        ai.protocol_ = tmp->queryProtocol == SOCK_STREAM ? NetsysNative::SERVER_PROTOCOL_TCP :
+            NetsysNative::SERVER_PROTOCOL_UDP;
+        ai.addr_ = tmp->addr;
+        report.serverlist_.push_back(ai);
+    }
+}
+
 int32_t DnsQualityDiag::ReportDnsResult(uint16_t netId, uint16_t uid, uint32_t pid, int32_t usedtime,
-    char* name, uint32_t size, int32_t failreason, QueryParam queryParam, AddrInfo* addrinfo)
+    char* name, uint32_t size, int32_t failreason, QueryParam queryParam, AddrInfo* addrinfo,
+    uint32_t serverSize, DnsServerInfo *dnsserverinfo)
 {
     if (failreason == DNS_FAIL_REASON_FIREWALL) {
         return 0;
@@ -120,8 +142,10 @@ int32_t DnsQualityDiag::ReportDnsResult(uint16_t netId, uint16_t uid, uint32_t p
         report.timeused_ = static_cast<uint32_t>(usedtime);
         report.queryresult_ = static_cast<uint32_t>(failreason);
         report.host_ = name;
+        report.querytime_ = static_cast<uint64_t>(queryParam.queryTime);
         if (failreason == 0) {
             ParseReportAddr(size, addrinfo, report);
+            ParseDnsSever(serverSize, dnsserverinfo, report);
         }
         std::shared_ptr<NetsysNative::NetDnsResultReport> rpt =
             std::make_shared<NetsysNative::NetDnsResultReport>(report);
@@ -367,10 +391,8 @@ int32_t DnsQualityDiag::send_dns_report()
     if (report_.size() > 0) {
         std::list<NetsysNative::NetDnsResultReport> reportSend(report_);
         report_.clear();
-        NETNATIVE_LOG_D("send_dns_report (%{public}zu)", reportSend.size());
         locker.unlock();
         for (auto cb: resultListeners_) {
-            NETNATIVE_LOG_D("send_dns_report cb)");
             cb->OnDnsResultReport(reportSend.size(), reportSend);
         }
     }

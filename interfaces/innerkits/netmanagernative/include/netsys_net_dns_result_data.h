@@ -31,6 +31,12 @@ enum NetDnsResultAddrType : uint32_t {
     ADDR_TYPE_IPV4 = 0,
     ADDR_TYPE_IPV6 = 1,
 };
+
+enum NetDnsResultServerProtocol : uint8_t {
+    SERVER_PROTOCOL_TCP = 1,
+    SERVER_PROTOCOL_UDP = 2,
+};
+
 #define NET_SYMBOL_VISIBLE __attribute__ ((visibility("default")))
 
 struct NetDnsResultAddrInfo final : public Parcelable {
@@ -41,6 +47,15 @@ struct NetDnsResultAddrInfo final : public Parcelable {
     static bool Unmarshalling(Parcel &parcel, NetDnsResultAddrInfo &addrinfo);
 };
 
+struct NetDnsResultServerInfo final : public Parcelable {
+    uint8_t	        type_;
+    uint8_t         protocol_;
+    std::string     addr_;
+ 
+    bool Marshalling(Parcel &parcel) const override;
+    static bool Unmarshalling(Parcel &parcel, NetDnsResultServerInfo &addrinfo);
+};
+
 struct NetDnsResultReport final : public Parcelable {
     uint32_t        netid_;
     uint32_t        uid_;
@@ -48,7 +63,9 @@ struct NetDnsResultReport final : public Parcelable {
     uint32_t        timeused_;
     uint32_t        queryresult_;
     std::string     host_;
+    uint64_t        querytime_;
     std::list<NetDnsResultAddrInfo> addrlist_;
+    std::vector<NetDnsResultServerInfo> serverlist_;
 
     bool Marshalling(Parcel &parcel) const override;
     static bool Unmarshalling(Parcel &parcel, NetDnsResultReport &result);

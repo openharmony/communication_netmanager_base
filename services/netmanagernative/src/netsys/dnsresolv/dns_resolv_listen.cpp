@@ -37,6 +37,8 @@ static constexpr const uint32_t MAX_LISTEN_NUM = 1024;
 static constexpr const uint32_t DNS_QUERY_PRE_NUM = 4;
 static constexpr const uint32_t DNS_QUERY_ABNORMAL_SIZE =
 sizeof(int32_t) + sizeof(int32_t) + sizeof(DnsProcessInfoExt) + sizeof(int32_t) + sizeof(int8_t);
+static constexpr const uint32_t DNS_POST_QUERY_PARAM_SIZE =
+    sizeof(uint32_t) + sizeof(int32_t) + sizeof(uint32_t) + sizeof(int32_t) + sizeof(QueryParam);
 const std::string PUBLIC_DNS_SERVER = "persist.sys.netsysnative_dns_servers_backup";
 using namespace NetManagerStandard;
 static constexpr int32_t DNS_REPLACE_NUM = 2;
@@ -98,6 +100,7 @@ private:
         uint32_t usedTime = 0;
         int32_t queryRet = 0;
         uint32_t aiSize = 0;
+        uint32_t dnsServerNum = 0;
         QueryParam param{};
     };
     ReceiverRunner ProcPostDnsResult(const std::string &name, uint16_t netId, uint32_t uid, uint32_t pid,
@@ -586,7 +589,6 @@ ReceiverRunner DnsResolvListenInternal::ProcGetCacheContent(const std::string &n
                                                             uint32_t resNum)
 {
     return [this, name, netId, uid, resNum](FileDescriptor fd, const std::string &data) -> FixedLengthReceiverState {
-        // LCOV_EXCL_START
         if (server_ == nullptr) {
             return FixedLengthReceiverState::ONERROR;
         }
@@ -600,7 +602,6 @@ ReceiverRunner DnsResolvListenInternal::ProcGetCacheContent(const std::string &n
                      data.data(), sizeof(AddrInfoWithTtl) * size) != EOK) {
             return FixedLengthReceiverState::ONERROR;
         }
-        // LCOV_EXCL_STOP
 
 #ifdef FEATURE_NET_FIREWALL_ENABLE
         ProcSetCacheCommand(name, netId, uid, addrInfo, size);
@@ -665,7 +666,7 @@ ReceiverRunner DnsResolvListenInternal::ProcGetKeyForCache(uint16_t netId, uint3
             return FixedLengthReceiverState::ONERROR;
         }
 
-        server_->AddReceiver(fd, sizeof(uint32_t) + sizeof(int32_t) + sizeof(uint32_t) + sizeof(QueryParam),
+        server_->AddReceiver(fd, DNS_POST_QUERY_PARAM_SIZE,
                              ProcGetPostParam(data, netId, uid, pid));
         return FixedLengthReceiverState::CONTINUE;
     };
@@ -678,7 +679,7 @@ ReceiverRunner DnsResolvListenInternal::ProcGetPostParam(const std::string &name
         if (server_ == nullptr) {
             return FixedLengthReceiverState::ONERROR;
         }
-        if (data.size() < sizeof(uint32_t) + sizeof(int32_t) + sizeof(uint32_t) + sizeof(QueryParam)) {
+        if (data.size() < DNS_POST_QUERY_PARAM_SIZE) {
             return FixedLengthReceiverState::ONERROR;
         }
 
@@ -697,16 +698,22 @@ ReceiverRunner DnsResolvListenInternal::ProcGetPostParam(const std::string &name
                      data.data() + sizeof(uint32_t) + sizeof(int32_t) + sizeof(uint32_t), sizeof(QueryParam)) != EOK) {
             return FixedLengthReceiverState::ONERROR;
         }
+        if (memcpy_s(&param.dnsServerNum, sizeof(uint32_t),
+                     data.data() + sizeof(uint32_t) + sizeof(int32_t) + sizeof(uint32_t) + sizeof(QueryParam),
+                     sizeof(uint32_t)) != EOK) {
+            return FixedLengthReceiverState::ONERROR;
+        }
 
         if (param.queryRet == 0 && param.aiSize > 0) {
             auto size = std::min<uint32_t>(MAX_RESULTS, param.aiSize);
             param.aiSize = size;
-            server_->AddReceiver(fd, sizeof(AddrInfo) * size, ProcPostDnsResult(name, netId, uid, pid, param));
+            size_t dataLen = sizeof(AddrInfo) * size + param.dnsServerNum * sizeof(DnsServerInfo);
+            server_->AddReceiver(fd, dataLen, ProcPostDnsResult(name, netId, uid, pid, param));
             return FixedLengthReceiverState::CONTINUE;
         } else {
             DnsQualityDiag::GetInstance().ReportDnsResult(netId, uid, pid, static_cast<int32_t>(param.usedTime),
                                                           const_cast<char *>(name.c_str()), 0, param.queryRet,
-                                                          param.param, nullptr);
+                                                          param.param, nullptr, 0, nullptr);
             return FixedLengthReceiverState::DATA_ENOUGH;
         }
     };
@@ -720,7 +727,8 @@ ReceiverRunner DnsResolvListenInternal::ProcPostDnsResult(const std::string &nam
             if (server_ == nullptr) {
                 return FixedLengthReceiverState::ONERROR;
             }
-            if (data.size() < sizeof(AddrInfo) * param.aiSize) {
+            size_t dataLen = sizeof(AddrInfo) * param.aiSize + sizeof(DnsServerInfo) * param.dnsServerNum;
+            if (data.size() < dataLen) {
                 return FixedLengthReceiverState::ONERROR;
             }
             auto size = std::min<uint32_t>(MAX_RESULTS, param.aiSize);
@@ -728,9 +736,14 @@ ReceiverRunner DnsResolvListenInternal::ProcPostDnsResult(const std::string &nam
             if (memcpy_s(addrInfo, sizeof(AddrInfo) * MAX_RESULTS, data.data(), sizeof(AddrInfo) * size) != EOK) {
                 return FixedLengthReceiverState::ONERROR;
             }
+            DnsServerInfo dnsServerInfo[MAX_RESULTS]{};
+            if (memcpy_s(dnsServerInfo, sizeof(DnsServerInfo) * MAX_RESULTS, data.data() + sizeof(AddrInfo) * size,
+                sizeof(DnsServerInfo) * param.dnsServerNum) != EOK) {
+                return FixedLengthReceiverState::ONERROR;
+            }
             DnsQualityDiag::GetInstance().ReportDnsResult(netId, uid, pid, static_cast<int32_t>(param.usedTime),
                                                           const_cast<char *>(name.c_str()), size, param.queryRet,
-                                                          param.param, addrInfo);
+                                                          param.param, addrInfo, param.dnsServerNum, dnsServerInfo);
             return FixedLengthReceiverState::DATA_ENOUGH;
         };
 }

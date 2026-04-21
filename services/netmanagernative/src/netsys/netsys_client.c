@@ -442,6 +442,42 @@ int32_t FillBasicAddrInfo(struct AddrInfo *addrInfo, struct addrinfo *info)
     return 0;
 }
 
+int32_t FillBasicDnsServerInfo(struct DnsServerInfo *serverInfo, struct dnsserver *ds)
+{
+    if (serverInfo == NULL || ds == NULL || ds->sa == NULL) {
+        return -1;
+    }
+    struct sockaddr *sa = ds->sa;
+    serverInfo->queryProtocol = ds->query_protocol;
+    serverInfo->aiFamily = sa->sa_family;
+    if (sa->sa_family == AF_INET) {
+        struct sockaddr_in *saIn = (struct sockaddr_in *)sa;
+        inet_ntop(AF_INET, &(saIn->sin_addr), serverInfo->addr, MAX_SERVER_LENGTH);
+    } else if (sa->sa_family == AF_INET6) {
+        struct sockaddr_in6 *saIn6 = (struct sockaddr_in6 *)sa;
+        inet_ntop(AF_INET6, &(saIn6->sin6_addr), serverInfo->addr, MAX_SERVER_LENGTH);
+    }
+    return 0;
+}
+ 
+int32_t FillDnsServerInfo(struct DnsServerInfo dnsServerInfo[static MAX_RESULTS],
+    struct dnsserver *res)
+{
+    int32_t resNum = 0;
+    struct dnsserver *tmp = res;
+    struct dnsserver *next = NULL;
+    while (tmp != NULL) {
+        next = tmp->sa_next;
+        // LCOV_EXCL_START
+        if (resNum < MAX_RESULTS && FillBasicDnsServerInfo(&dnsServerInfo[resNum], tmp) == 0) {
+            resNum++;
+        }
+        // LCOV_EXCL_STOP
+        tmp = next;
+    }
+    return resNum;
+}
+
 static int32_t FillAddrInfo(struct AddrInfo addrInfo[static MAX_RESULTS], struct addrinfo *res)
 {
     if (memset_s(addrInfo, sizeof(struct AddrInfo) * MAX_RESULTS, 0, sizeof(struct AddrInfo) * MAX_RESULTS) != 0) {
@@ -487,13 +523,16 @@ static int32_t FillDnsAns(struct AddrInfoWithTtl addrInfo[static MAX_RESULTS], s
     return resNum;
 }
 
-static int32_t FillQueryParam(struct queryparam *orig, struct QueryParam *dest)
+int32_t FillQueryParam(struct queryparam *orig, struct QueryParam *dest, struct recordinfo *info)
 {
     dest->type = orig->qp_type;
     dest->netId = orig->qp_netid;
     dest->mark = orig->qp_mark;
     dest->flags = orig->qp_flag;
     dest->qHook = NULL;
+    if (info != NULL) {
+        dest->queryTime = info->querytime;
+    }
     return 0;
 }
 
@@ -644,22 +683,27 @@ int NetSysIsIpv4Enable(uint16_t netId)
     return enable;
 }
 
-static int32_t NetSysPostDnsResultPollSendData(int sockFd, int queryret, int32_t resNum, struct QueryParam *param,
-                                               struct AddrInfo addrInfo[static MAX_RESULTS])
+static int32_t NetSysPostDnsResultPollSendData(struct DnsResultPollParam param,
+                                               struct AddrInfo addrInfo[static MAX_RESULTS],
+                                               struct DnsServerInfo dnsServerInfo[static MAX_RESULTS])
 {
     // LCOV_EXCL_START
-    if (!PollSendData(sockFd, (char *)&queryret, sizeof(int))) {
-        DNS_CONFIG_PRINT("send failed %d", errno);
+    int sockFd = param.sockFd;
+    int32_t resNum = param.resNum;
+    int32_t dnsServerNum = param.dnsServerNum;
+    if (!PollSendData(sockFd, (char *)&param.queryRet, sizeof(int))) {
         return CloseSocketReturn(sockFd, -errno);
     }
 
     if (!PollSendData(sockFd, (char *)&resNum, sizeof(int32_t))) {
-        DNS_CONFIG_PRINT("send failed %d", errno);
         return CloseSocketReturn(sockFd, -errno);
     }
 
-    if (!PollSendData(sockFd, (char *)param, sizeof(struct QueryParam))) {
-        DNS_CONFIG_PRINT("send failed %d", errno);
+    if (!PollSendData(sockFd, (char *)param.param, sizeof(struct QueryParam))) {
+        return CloseSocketReturn(sockFd, -errno);
+    }
+ 
+    if (!PollSendData(sockFd, (char *)&param.dnsServerNum, sizeof(int32_t))) {
         return CloseSocketReturn(sockFd, -errno);
     }
     // LCOV_EXCL_STOP
@@ -672,11 +716,20 @@ static int32_t NetSysPostDnsResultPollSendData(int sockFd, int queryret, int32_t
         }
         // LCOV_EXCL_STOP
     }
+    // LCOV_EXCL_START
+    if (dnsServerNum > 0) {
+        if (!PollSendData(sockFd, (char *)dnsServerInfo, sizeof(struct DnsServerInfo) * dnsServerNum)) {
+            DNS_CONFIG_PRINT("send failed %d", errno);
+            return CloseSocketReturn(sockFd, -errno);
+        }
+    }
+    // LCOV_EXCL_STOP
     return CloseSocketReturn(sockFd, 0);
 }
 
 static int32_t NetSysPostDnsResultInternal(int sockFd, uint16_t netId, char* name, int usedtime, int queryret,
-                                           struct addrinfo *res, struct queryparam *param)
+                                           struct addrinfo *res, struct queryparam *param,
+                                           struct recordinfo *storeinfo)
 {
     struct RequestInfo info = {
         .uid = getuid(),
@@ -687,56 +740,63 @@ static int32_t NetSysPostDnsResultInternal(int sockFd, uint16_t netId, char* nam
     int32_t uid = (int32_t)(getuid());
     int32_t pid = getpid();
     uint32_t nameLen = strlen(name) + 1;
-    NETSYS_CLIENT_PRINT("NetSysPostDnsResultInternal uid %d, pid %d, netid %d pkg", uid, pid, netId);
 
     struct AddrInfo addrInfo[MAX_RESULTS] = {};
+    struct DnsServerInfo dnsServerInfo[MAX_RESULTS] = {0};
     struct QueryParam netparam = {};
     int32_t resNum = 0;
+    int32_t dnsServerNum = 0;
     if (queryret == 0) {
         resNum = FillAddrInfo(addrInfo, res);
+        // LCOV_EXCL_START
+        if (storeinfo != NULL) {
+            dnsServerNum = FillDnsServerInfo(dnsServerInfo, storeinfo->sa);
+        }
+        // LCOV_EXCL_STOP
     }
+    // LCOV_EXCL_START
     if (resNum < 0) {
         return CloseSocketReturn(sockFd, -1);
     }
-    FillQueryParam(param, &netparam);
+    // LCOV_EXCL_STOP
+    FillQueryParam(param, &netparam, storeinfo);
 
     // LCOV_EXCL_START
     if (!PollSendData(sockFd, (const char *)(&info), sizeof(info))) {
-        DNS_CONFIG_PRINT("send failed %d", errno);
         return CloseSocketReturn(sockFd, -errno);
     }
 
     if (!PollSendData(sockFd, (char *)&uid, sizeof(int32_t))) {
-        DNS_CONFIG_PRINT("send failed %d", errno);
         return CloseSocketReturn(sockFd, -errno);
     }
 
     if (!PollSendData(sockFd, (char *)&pid, sizeof(int32_t))) {
-        DNS_CONFIG_PRINT("send failed %d", errno);
         return CloseSocketReturn(sockFd, -errno);
     }
 
     if (!PollSendData(sockFd, (char *)&nameLen, sizeof(uint32_t))) {
-        DNS_CONFIG_PRINT("send failed %d", errno);
         return CloseSocketReturn(sockFd, -errno);
     }
 
     if (!PollSendData(sockFd, name, (sizeof(char) * nameLen))) {
-        DNS_CONFIG_PRINT("send failed %d", errno);
         return CloseSocketReturn(sockFd, -errno);
     }
 
     if (!PollSendData(sockFd, (char *)&usedtime, sizeof(int))) {
-        DNS_CONFIG_PRINT("send failed %d", errno);
         return CloseSocketReturn(sockFd, -errno);
     }
+    struct DnsResultPollParam pollParam;
+    pollParam.sockFd = sockFd;
+    pollParam.queryRet = queryret;
+    pollParam.resNum = resNum;
+    pollParam.dnsServerNum = dnsServerNum > 0 ? dnsServerNum : 0;
+    pollParam.param = &netparam;
     // LCOV_EXCL_STOP
-
-    return NetSysPostDnsResultPollSendData(sockFd, queryret, resNum, &netparam, addrInfo);
+    return NetSysPostDnsResultPollSendData(pollParam, addrInfo, dnsServerInfo);
 }
 
 int32_t NetSysPostDnsResult(int netid, char* name, int usedtime, int queryret,
-                            struct addrinfo *res, struct queryparam *param)
+                            struct addrinfo *res, struct queryparam *param, struct recordinfo *storeinfo)
 {
     if (name == NULL) {
         return -1;
@@ -748,7 +808,7 @@ int32_t NetSysPostDnsResult(int netid, char* name, int usedtime, int queryret,
         DNS_CONFIG_PRINT("NetSysPostDnsResult CreateConnectionToNetSys connect to netsys err: %d", errno);
         return sockFd;
     }
-    int err = NetSysPostDnsResultInternal(sockFd, netid, name, usedtime, queryret, res, param);
+    int err = NetSysPostDnsResultInternal(sockFd, netid, name, usedtime, queryret, res, param, storeinfo);
     if (err < 0) {
         return -1;
     }

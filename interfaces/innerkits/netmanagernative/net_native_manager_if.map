@@ -64,6 +64,7 @@
       "vtable for OHOS::NetsysNative::NetsysNativeServiceProxy";
       "vtable for OHOS::NetsysNative::NetDnsResultCallbackStub";
       "vtable for OHOS::NetsysNative::NetDnsResultAddrInfo";
+      "vtable for OHOS::NetsysNative::NetDnsResultServerInfo";
       "vtable for OHOS::NetsysNative::NetDnsResultReport";
       "vtable for OHOS::NetsysNative::NetDnsQueryResultAddrInfo";
       "vtable for OHOS::NetsysNative::NetDnsQueryResultReport";
@@ -85,6 +86,7 @@
       "VTT for OHOS::NetManagerStandard::UidRange";
       "VTT for OHOS::NetsysNative::NetsysNativeServiceProxy";
       "VTT for OHOS::NetsysNative::NetDnsResultAddrInfo";
+      "VTT for OHOS::NetsysNative::NetDnsResultServerInfo";
       "VTT for OHOS::NetsysNative::NetDnsResultCallbackStub";
       "VTT for OHOS::NetsysNative::NetDnsResultReport";
       "VTT for OHOS::NetsysNative::NetDnsQueryResultAddrInfo";

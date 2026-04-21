@@ -50,6 +50,10 @@ void HandleQueryAbnormalReport(struct DnsProcessInfoExt dnsProcessInfo,
 int32_t NetSysPostDnsQueryResult(int netid, struct addrinfo *addr, char *srcAddr,
     struct DnsProcessInfo *processInfo);
 int32_t FillBasicAddrInfo(struct AddrInfo *addrInfo, struct addrinfo *info);
+int32_t FillBasicDnsServerInfo(struct DnsServerInfo *serverInfo, struct dnsserver *ds);
+int32_t FillDnsServerInfo(struct DnsServerInfo dnsServerInfo[],
+    struct dnsserver *res);
+int32_t FillQueryParam(struct queryparam *orig, struct QueryParam *dest, struct recordinfo *info);
 int32_t NetSysSetNodataCache(uint16_t netId, const char *host);
 int32_t NetSysGetResolvConfExt(uint16_t netId, struct ResolvConfigExt *config);
 int NetSysGetNodataCache(uint16_t netId, const char *host);
@@ -457,6 +461,93 @@ HWTEST_F(NetsysClientTest, NetSysGetNodataCacheTest001, TestSize.Level1)
     // Get the nodata cache that was just set
     ret = NetSysGetNodataCache(netId, "test.example.com");
     EXPECT_GE(ret, 0);
+}
+
+struct dnsserver* CreateDnsNode(int family, const char* ip, int protocol) {
+    struct dnsserver* ds = (struct dnsserver*)malloc(sizeof(struct dnsserver));
+    ds->query_protocol = protocol;
+    ds->sa_next = NULL;
+ 
+    if (family == AF_INET) {
+        struct sockaddr_in* addr4 = (struct sockaddr_in*)malloc(sizeof(struct sockaddr_in));
+        memset(addr4, 0, sizeof(struct sockaddr_in));
+        addr4->sin_family = AF_INET;
+        inet_pton(AF_INET, ip, &addr4->sin_addr);
+        ds->sa = (struct sockaddr*)addr4;
+    } else if (family == AF_INET6) {
+        struct sockaddr_in6* addr6 = (struct sockaddr_in6*)malloc(sizeof(struct sockaddr_in6));
+        memset(addr6, 0, sizeof(struct sockaddr_in6));
+        addr6->sin6_family = AF_INET6;
+        inet_pton(AF_INET6, ip, &addr6->sin6_addr);
+        ds->sa = (struct sockaddr*)addr6;
+    } else {
+        struct sockaddr* sa_other = (struct sockaddr*)malloc(sizeof(struct sockaddr));
+        sa_other->sa_family = family;
+        ds->sa = sa_other;
+    }
+    return ds;
+}
+ 
+HWTEST_F(NetsysClientTest, FillBasicDnsServerInfo001, TestSize.Level1)
+{
+    auto ret = FillBasicDnsServerInfo(NULL, NULL);
+    EXPECT_EQ(ret, -1);
+    
+    struct DnsServerInfo si;
+    ret = FillBasicDnsServerInfo(&si, NULL);
+    EXPECT_EQ(ret, -1);
+ 
+    struct dnsserver ds;
+    ds.query_protocol = 1;
+    ds.sa_next = NULL;
+    ds.sa = NULL;
+    ret = FillBasicDnsServerInfo(&si, &ds);
+    EXPECT_EQ(ret, -1);
+}
+ 
+HWTEST_F(NetsysClientTest, FillDnsServerInfo001, TestSize.Level1)
+{
+    struct dnsserver* head = CreateDnsNode(AF_INET, "1.1.1.1", 1);
+    head->sa_next = CreateDnsNode(AF_INET6, "::1", 2);
+ 
+    struct DnsServerInfo results[MAX_RESULTS];
+    memset(results, 0, sizeof(results));
+ 
+    int32_t count = FillDnsServerInfo(results, head);
+    EXPECT_EQ(count, 2);
+}
+ 
+HWTEST_F(NetsysClientTest, FillDnsServerInfo002, TestSize.Level1)
+{
+    struct dnsserver* head = CreateDnsNode(999, "", 0);
+ 
+    struct DnsServerInfo results[MAX_RESULTS];
+    int32_t count = FillDnsServerInfo(results, head);
+    EXPECT_EQ(count, 1);
+}
+ 
+HWTEST_F(NetsysClientTest, FillDnsServerInfo003, TestSize.Level1)
+{
+    struct dnsserver* head = CreateDnsNode(AF_INET, "1.2.3.4", 0);
+    struct dnsserver* curr = head;
+    for (int i = 0; i < MAX_RESULTS + 1; i++) {
+        curr->sa_next = CreateDnsNode(AF_INET, "1.2.3.4", 0);
+        curr = curr->sa_next;
+    }
+ 
+    struct DnsServerInfo results[MAX_RESULTS];
+    int32_t count = FillDnsServerInfo(results, head);
+ 
+    EXPECT_TRUE(count == MAX_RESULTS);
+}
+ 
+HWTEST_F(NetsysClientTest, FillQueryParam001, TestSize.Level1)
+{
+    struct queryparam qp;
+    struct QueryParam dest;
+    struct recordinfo record;
+    EXPECT_EQ(FillQueryParam(&qp, &dest, &record), 0);
+    EXPECT_EQ(FillQueryParam(&qp, &dest, NULL), 0);
 }
 
 } // namespace nmd
