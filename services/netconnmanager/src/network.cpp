@@ -345,10 +345,8 @@ bool Network::UpdateNetLinkInfo(const NetLinkInfo &netLinkInfo)
         nat464Service_->UpdateService(NAT464_SERVICE_STOP);
     }
     if (netSupplierType_ != BEARER_VPN && isSupportInternet_) {
-        if (netMonitor_) {
-            if (DelayStartDetectionForIpUpdate(hasSameIpAddr)) {
-                return true;
-            }
+        if (DelayStartDetectionForIpUpdate(hasSameIpAddr)) {
+            return true;
         }
         StartNetDetection(true);
     }
@@ -363,7 +361,8 @@ bool Network::DelayStartDetectionForIpUpdate(bool hasSameIpAddr)
     if ((netSupplierType_ != BEARER_CELLULAR && netSupplierType_ != BEARER_WIFI)) {
         return false;
     }
-    if (!netMonitor_->IsDetecting()) {
+    std::shared_lock<std::shared_mutex> lockMonitor(netMonitorMutex_);
+    if (netMonitor_ == nullptr || !netMonitor_->IsDetecting()) {
         return false;
     }
     uint64_t nowTime = CommonUtils::GetCurrentMilliSecond();
@@ -371,6 +370,7 @@ bool Network::DelayStartDetectionForIpUpdate(bool hasSameIpAddr)
     if ((nowTime - netMonitor_->GetLastDetectTime()) >= LAST_DETECTION_LAPSE_MS) {
         return false;
     }
+    lockMonitor.unlock();
     NETMGR_LOG_I("UpdateNetLinkInfo: delay start detection");
     if (eventHandler_) {
         eventHandler_->RemoveTask(taskName);
@@ -823,18 +823,10 @@ void Network::StartNetDetection(bool needReport)
         return;
     }
 #endif
-    if (needReport && netMonitor_) {
+    if (needReport) {
         StopNetDetection();
-        InitNetMonitor();
-        return;
     }
-    if (!netMonitor_) {
-        NETMGR_LOG_I("netMonitor_ is null.");
-        InitNetMonitor();
-        return;
-    } else {
-        netMonitor_->Start();
-    }
+    InitNetMonitor();
 }
 
 #ifdef FEATURE_SUPPORT_POWERMANAGER
@@ -853,6 +845,7 @@ void Network::SetNetCaps(const std::set<NetCap> &netCaps)
 void Network::NetDetectionForDnsHealth(bool dnsHealthSuccess)
 {
     NETMGR_LOG_D("Enter NetDetectionForDnsHealthSync");
+    std::shared_lock<std::shared_mutex> lockMonitor(netMonitorMutex_);
     if (netMonitor_ == nullptr) {
         NETMGR_LOG_D("netMonitor_ is nullptr");
         return;
@@ -872,14 +865,13 @@ void Network::NetDetectionForDnsHealth(bool dnsHealthSuccess)
     } else if (IsDetectionForDnsFail(lastDetectResult, dnsHealthSuccess)) {
         NETMGR_LOG_D("Dns report fail, start net detection");
         netMonitor_->Start();
-    } else {
-        NETMGR_LOG_D("Not match, no need to restart.");
     }
 }
 
 void Network::StopNetDetection()
 {
     NETMGR_LOG_D("Enter StopNetDetection");
+    std::unique_lock<std::shared_mutex> lockMonitor(netMonitorMutex_);
     if (netMonitor_ != nullptr) {
         netMonitor_->Stop();
         netMonitor_->StopDualStackProbe();
@@ -890,7 +882,12 @@ void Network::StopNetDetection()
 
 void Network::InitNetMonitor()
 {
-    NETMGR_LOG_D("Enter InitNetMonitor");
+    std::unique_lock<std::shared_mutex> lockMonitor(netMonitorMutex_);
+    if (netMonitor_ != nullptr) {
+        netMonitor_->Start();
+        return;
+    }
+    NETMGR_LOG_I("InitNetMonitor");
     std::weak_ptr<INetMonitorCallback> monitorCallback = shared_from_this();
     std::shared_lock<std::shared_mutex> lock(netLinkInfoMutex_);
     NetLinkInfo netLinkInfoBck = netLinkInfo_;
@@ -1042,11 +1039,10 @@ void Network::ResetNetlinkInfo()
 
 void Network::UpdateGlobalHttpProxy(const HttpProxy &httpProxy)
 {
+    std::shared_lock<std::shared_mutex> lockMonitor(netMonitorMutex_);
     if (netMonitor_ == nullptr) {
-        NETMGR_LOG_D("netMonitor_ is nullptr");
         return;
     }
-    netMonitor_->UpdateGlobalHttpProxy(httpProxy);
     StartNetDetection(true);
 }
 
@@ -1133,6 +1129,7 @@ void Network::CloseSocketsUid(uint32_t uid)
 void Network::SetScreenState(bool isScreenOn)
 {
     isScreenOn_ = isScreenOn;
+    std::shared_lock<std::shared_mutex> lockMonitor(netMonitorMutex_);
     if (netMonitor_ == nullptr) {
         return;
     }
@@ -1141,6 +1138,7 @@ void Network::SetScreenState(bool isScreenOn)
 
 int32_t Network::StartDualStackProbeThread()
 {
+    std::shared_lock<std::shared_mutex> lockMonitor(netMonitorMutex_);
     if (netMonitor_) {
         return netMonitor_->StartDualStackProbeThread();
     }
@@ -1202,6 +1200,7 @@ void Network::HandleNetProbeResult(DualStackProbeResultCode DualStackProbeResult
 void Network::UpdateDualStackProbeTime(int32_t dualStackProbeTime)
 {
     dualStackProbeTime_ = dualStackProbeTime;
+    std::shared_lock<std::shared_mutex> lockMonitor(netMonitorMutex_);
     if (netMonitor_) {
         netMonitor_->UpdateDualStackProbeTime(dualStackProbeTime);
     }

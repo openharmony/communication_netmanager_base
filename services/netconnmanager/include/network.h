@@ -119,6 +119,7 @@ private:
     NetDetectionStatus detectResult_ = UNKNOWN_STATE;
     std::atomic_bool isPhyNetCreated_ = false;
     std::atomic_bool isVirtualCreated_ = false;
+    std::shared_mutex netMonitorMutex_;
     std::shared_ptr<NetMonitor> netMonitor_ = nullptr;
     NetDetectionHandler netCallback_ = nullptr;
     NetBearType netSupplierType_;
