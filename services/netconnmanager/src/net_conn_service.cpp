@@ -57,7 +57,6 @@ namespace OHOS {
 namespace NetManagerStandard {
 namespace {
 constexpr uint32_t MAX_ALLOW_UID_NUM = 2000;
-constexpr uint32_t PROXY_INIT_DELAY_TIME = 2000;
 constexpr uint32_t INVALID_SUPPLIER_ID = 0;
 constexpr char SIGNAL_LEVEL_3 = 3;
 // hisysevent error messgae
@@ -212,12 +211,12 @@ bool NetConnService::Init()
     AddSystemAbilityListener(ACCESS_TOKEN_MANAGER_SERVICE_ID);
     AddSystemAbilityListener(COMM_NET_POLICY_MANAGER_SYS_ABILITY_ID);
     AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);
+    AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
     // LCOV_EXCL_START
     if (netConnEventHandler_ == nullptr) {
         NETMGR_LOG_E("Create netConnEventHandler_ == nullptr.");
         return false;
     }
-    netConnEventHandler_->PostAsyncTask([&]() { CheckProxyStatus(); }, PROXY_INIT_DELAY_TIME);
     RegisterAppStateAware();
     // LCOV_EXCL_STOP
     NETMGR_LOG_I("Init end");
@@ -2908,8 +2907,7 @@ int32_t NetConnService::GetProxyMode(OHOS::NetManagerStandard::ProxyModeType &mo
     int ret = dataShareHelperUtils->Query(hostUri, KEY_PROXY_MODE, modeStr);
     if (ret != NETMANAGER_SUCCESS) {
         NETMGR_LOG_W("get proxy mode fail");
-        mode = PROXY_MODE_OFF;
-        return NETMANAGER_SUCCESS;
+        return ret;
     }
     int temp = CommonUtils::StrToInt(modeStr);
     switch (temp) {
@@ -3517,6 +3515,8 @@ void NetConnService::OnAddSystemAbility(int32_t systemAbilityId, const std::stri
         }
     } else if (systemAbilityId == COMMON_EVENT_SERVICE_ID) {
         SubscribeCommonEvent();
+    } else if (systemAbilityId == DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID) {
+        CheckProxyStatus();
     }
 }
 
