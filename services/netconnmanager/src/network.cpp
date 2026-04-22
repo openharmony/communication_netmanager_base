@@ -141,6 +141,7 @@ bool Network::CreateVirtualNetwork()
         // Create a virtual network here
         std::shared_lock<std::shared_mutex> lock(netLinkInfoMutex_);
         bool hasDns = netLinkInfo_.dnsList_.size() ? true : false;
+        lock.unlock();
         if (NetsysController::GetInstance().NetworkCreateVirtual(netId_, hasDns) != NETMANAGER_SUCCESS) {
             std::string errMsg = std::string(ERROR_MSG_CREATE_VIRTUAL_NETWORK_FAILED).append(std::to_string(netId_));
             SendSupplierFaultHiSysEvent(FAULT_CREATE_VIRTUAL_NETWORK_FAILED, errMsg);
