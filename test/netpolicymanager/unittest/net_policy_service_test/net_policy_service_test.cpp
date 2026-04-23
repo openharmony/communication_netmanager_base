@@ -407,5 +407,21 @@ HWTEST_F(UtNetPolicyService, GetSelfNetworkAccessPolicy003, TestSize.Level1)
     auto ret = instance_->GetSelfNetworkAccessPolicy(policy);
     EXPECT_EQ(ret, NETMANAGER_SUCCESS);
 }
+
+HWTEST_F(UtNetPolicyService, ReportFirewallPolicyChange001, TestSize.Level1)
+{
+    NetPolicyService policyService;
+    policyService.netPolicyRule_ = std::make_shared<NetPolicyRule>();
+    policyService.netPolicyFirewall_ = std::make_shared<NetPolicyFirewall>();
+    policyService.netPolicyTraffic_ = std::make_shared<NetPolicyTraffic>();
+    std::string testFnc = "testFnc";
+    std::shared_ptr<FirewallRule> testFireWall;
+    policyService.netPolicyFirewall_->ReportFirewallPolicyChange(testFnc, 1, true, testFireWall);
+    NetAccessPolicy policy;
+    policy.allowWiFi = false;
+    policy.allowCellular = false;
+    auto ret = policyService.GetSelfNetworkAccessPolicy(policy);
+    EXPECT_EQ(ret, NETMANAGER_SUCCESS);
+}
 } // namespace NetManagerStandard
 } // namespace OHOS

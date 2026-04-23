@@ -14,10 +14,13 @@
  */
 
 #include "event_report.h"
+#include "hisysevent.h"
 
 namespace OHOS {
 namespace NetManagerStandard {
 namespace {
+using HiSysEventType = OHOS::HiviewDFX::HiSysEvent::EventType;
+using HiSysEvent = OHOS::HiviewDFX::HiSysEvent;
 // event name
 constexpr const char *NET_CONN_SUPPLER_FAULT = "NET_CONN_SUPPLER_FAULT";
 constexpr const char *NET_CONN_REQUEST_FAULT = "NET_CONN_REQUEST_FAULT";
@@ -41,6 +44,7 @@ constexpr const char *EVENT_KEY_NET_SUPPLIER_REGISTER_SUPPLIERID = "REGISTER_SUP
 constexpr const char *EVENT_KEY_NET_REQUEST_CALLBACK_AVAILABLE = "CALLBACK_AVAILABLE";
 constexpr const char *EVENT_KEY_NET_REQUEST_SUPPLIERIDENT = "SUPPLIERIDENT";
 constexpr const char *EVENT_KEY_NET_MONITOR_STATUS = "STATUS";
+constexpr const char CHR_DOMAIN[] = "CHR";
 } // namespace
 
 void EventReport::SendSupplierFaultEvent(const EventInfo &eventInfo)
@@ -94,6 +98,14 @@ void EventReport::SendPortalDetectInfoEvent(const std::string &ret)
 {
     HiSysEventWrite(HiSysEvent::Domain::COMMUNICATION, "WIFI_CHR_EVENT", HiSysEvent::EventType::STATISTIC,
         "EVENT_NAME", "NETMANGR_PORTAL_INFO", "EVENT_VALUE", ret);
+}
+
+void EventReport::SendNetworkPolicyChangeEvent(uint32_t callingUid, std::string &callingBundleName,
+    const std::string &infoStr)
+{
+    HiSysEventWrite(CHR_DOMAIN, NETWORK_POLICY_CHANGED_EVENT, HiSysEvent::EventType::STATISTIC,
+        "CALLINGUID", callingUid, "CALLINGBUNDLENAME", callingBundleName,
+        "TIMESTAMP", "", "NETWORK_POLICY_INFO", infoStr);
 }
 
 } // namespace NetManagerStandard

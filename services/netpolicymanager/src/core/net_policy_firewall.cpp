@@ -21,6 +21,9 @@
 #include "net_policy_core.h"
 #include "net_policy_event_handler.h"
 #include "net_settings.h"
+#include <dlfcn.h>
+#include "net_bundle.h"
+#include "event_report.h"
 
 namespace OHOS {
 namespace NetManagerStandard {
@@ -42,6 +45,76 @@ void NetPolicyFirewall::Init()
     powerSaveFirewallRule_->SetAllowedList(powerSaveAllowedList_);
 }
 
+std::string NetPolicyFirewall::GetBundleNameForUid(uint32_t uid)
+{
+    std::string LIB_NET_BUNDLE_UTILS_PATH = "libnet_bundle_utils.z.so";
+    void *handler = dlopen(LIB_NET_BUNDLE_UTILS_PATH.c_str(), RTLD_LAZY | RTLD_NODELETE);
+    // LCOV_EXCL_START
+    if (handler == nullptr) {
+        return "";
+    }
+    using GetNetBundleClass = INetBundle *(*)();
+    auto getNetBundle = (GetNetBundleClass)dlsym(handler, "GetNetBundle");
+    if (getNetBundle == nullptr) {
+        dlclose(handler);
+        return "";
+    }
+    auto netBundle = getNetBundle();
+    if (netBundle == nullptr) {
+        dlclose(handler);
+        return "";
+    }
+    std::optional<SampleBundleInfo> bundleInfo = netBundle->ObtainBundleInfoForUid(uid);
+    dlclose(handler);
+    if (!bundleInfo.has_value()) {
+        return "";
+    }
+    return bundleInfo.value().bundleName_;
+    // LCOV_EXCL_STOP
+}
+ 
+std::string NetPolicyFirewall::GetUidsBundleStr(const std::vector<uint32_t> &uids)
+{
+    std::stringstream ss;
+    ss << "[";
+    for (size_t i = 0; i < uids.size(); ++i) {
+        std::string bundleName = GetBundleNameForUid(uids[i]);
+        if (bundleName.empty()) {
+            ss << "\"" << uids[i] << "\"";
+        } else {
+            // LCOV_EXCL_START
+            ss << "\"" << bundleName << "\"";
+            // LCOV_EXCL_STOP
+        }
+        if (i < uids.size() - 1) {
+            ss << ",";
+        }
+    }
+    ss << "]";
+    return ss.str();
+}
+ 
+void NetPolicyFirewall::ReportFirewallPolicyChange(const std::string &callingFnc,
+    uint32_t chainType, bool enable, std::shared_ptr<FirewallRule> &rule)
+{
+    if (rule == nullptr) {
+        return;
+    }
+    uint32_t pid = IPCSkeleton::GetCallingPid();
+    uint32_t uid = IPCSkeleton::GetCallingUid();
+    std::string callingBundleName = GetBundleNameForUid(uid);
+    std::stringstream ss;
+    ss << "[{";
+    ss << "\"callingFnc\":\"" << callingFnc << "\",";
+    ss << "\"callingPid\":" << pid << ", ";
+    ss << "\"chainType\":" << chainType << ",";
+    ss << "\"enable\":" << (enable ? 1 : 0) << ",";
+    ss << "\"allowList\":\"" << GetUidsBundleStr(rule->GetAllowedList()) << "\",";
+    ss << "\"deniedList\":\"" << GetUidsBundleStr(rule->GetDeniedList()) << "\"";
+    ss << "}]";
+    EventReport::SendNetworkPolicyChangeEvent(uid, callingBundleName, ss.str());
+}
+
 int32_t NetPolicyFirewall::SetDeviceIdleTrustlist(const std::vector<uint32_t> &uids, bool isAllowed)
 {
     std::unique_lock<std::shared_mutex> lock(listMutex_);
@@ -52,7 +125,7 @@ int32_t NetPolicyFirewall::SetDeviceIdleTrustlist(const std::vector<uint32_t> &u
     UpdateFirewallPolicyList(FIREWALL_CHAIN_DEVICE_IDLE, uids, isAllowed);
     GetFileInst()->WriteFirewallRules(FIREWALL_CHAIN_DEVICE_IDLE, deviceIdleAllowedList_, deviceIdleDeniedList_);
     deviceIdleFirewallRule_->SetAllowedList(uids, isAllowed ? FIREWALL_RULE_ALLOW : FIREWALL_RULE_DENY);
-
+    ReportFirewallPolicyChange(__func__, FIREWALL_CHAIN_DEVICE_IDLE, deviceIdleMode_, deviceIdleFirewallRule_);
     std::shared_ptr<PolicyEvent> eventData = std::make_shared<PolicyEvent>();
     eventData->eventId = NetPolicyEventHandler::MSG_DEVICE_IDLE_LIST_UPDATED;
     eventData->deviceIdleList = deviceIdleAllowedList_;
@@ -74,7 +147,7 @@ int32_t NetPolicyFirewall::SetPowerSaveTrustlist(const std::vector<uint32_t> &ui
         return NETMANAGER_ERR_LOCAL_PTR_NULL;
     }
     powerSaveFirewallRule_->SetAllowedList(uids, isAllowed ? FIREWALL_RULE_ALLOW : FIREWALL_RULE_DENY);
-
+    ReportFirewallPolicyChange(__func__, FIREWALL_CHAIN_POWER_SAVE, powerSaveMode_, powerSaveFirewallRule_);
     std::shared_ptr<PolicyEvent> eventData = std::make_shared<PolicyEvent>();
     eventData->eventId = NetPolicyEventHandler::MSG_POWER_SAVE_LIST_UPDATED;
     eventData->powerSaveList = powerSaveAllowedList_;
@@ -140,6 +213,7 @@ int32_t NetPolicyFirewall::UpdateDeviceIdlePolicy(bool enable)
     deviceIdleFirewallRule_->EnableFirewall(enable);
     NetmanagerHiTrace::NetmanagerFinishSyncTrace("Update device idle firewall status end");
     deviceIdleMode_ = enable;
+    ReportFirewallPolicyChange(__func__, FIREWALL_CHAIN_DEVICE_IDLE, enable, deviceIdleFirewallRule_);
     // notify to other core.
     auto policyEvent = std::make_shared<PolicyEvent>();
     policyEvent->deviceIdleMode = enable;
@@ -169,6 +243,7 @@ int32_t NetPolicyFirewall::UpdatePowerSavePolicy(bool enable)
     powerSaveFirewallRule_->EnableFirewall(enable);
     NetmanagerHiTrace::NetmanagerFinishSyncTrace("Update power save firewall status end");
     powerSaveMode_ = enable;
+    ReportFirewallPolicyChange(__func__, FIREWALL_CHAIN_POWER_SAVE, enable, powerSaveFirewallRule_);
     // notify to other core.
     auto policyEvent = std::make_shared<PolicyEvent>();
     policyEvent->powerSaveMode = enable;
@@ -191,6 +266,7 @@ int32_t NetPolicyFirewall::UpdateIdleDenyPolicy(bool enable)
     }
     NetmanagerHiTrace::NetmanagerStartSyncTrace("Update idle deny firewall status start");
     idleDenyFirewallRule_->EnableFirewall(enable);
+    ReportFirewallPolicyChange(__func__, FIREWALL_CHAIN_IDLE_DENY, enable, idleDenyFirewallRule_);
     NetmanagerHiTrace::NetmanagerFinishSyncTrace("Update idle deny firewall status end");
     idleDenyMode_ = enable;
     return NETMANAGER_SUCCESS;
@@ -207,6 +283,7 @@ int32_t NetPolicyFirewall::SetUidsDeniedListChain(const std::vector<uint32_t> &u
         return NETMANAGER_ERR_LOCAL_PTR_NULL;
     }
     idleDenyFirewallRule_->SetDeniedList(uids, isAdd ? FIREWALL_RULE_DENY : FIREWALL_RULE_ALLOW);
+    ReportFirewallPolicyChange(__func__, FIREWALL_CHAIN_IDLE_DENY, idleDenyMode_, idleDenyFirewallRule_);
     return NETMANAGER_SUCCESS;
 }
 
