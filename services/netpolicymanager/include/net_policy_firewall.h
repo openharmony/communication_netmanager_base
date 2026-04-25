@@ -112,6 +112,10 @@ public:
 private:
     void UpdateFirewallPolicyList(uint32_t chainType, const std::vector<uint32_t> &uids, bool isAllowed);
     void DeleteUid(uint32_t uid);
+    std::string GetBundleNameForUid(uint32_t uid);
+    std::string GetUidsBundleStr(const std::vector<uint32_t> &uids);
+    void ReportFirewallPolicyChange(const std::string &callingFnc, uint32_t chainType, bool enable,
+        std::shared_ptr<FirewallRule> &rule);
 
 private:
     std::shared_ptr<FirewallRule> deviceIdleFirewallRule_;

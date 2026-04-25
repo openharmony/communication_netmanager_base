@@ -18,11 +18,6 @@
 
 #include <string>
 
-#include "hisysevent.h"
-
-using HiSysEventType = OHOS::HiviewDFX::HiSysEvent::EventType;
-using HiSysEvent = OHOS::HiviewDFX::HiSysEvent;
-
 namespace OHOS {
 namespace NetManagerStandard {
 enum class NetConnEventType {
@@ -100,6 +95,8 @@ public:
     static void SendMonitorFaultEvent(const EventInfo &eventInfo);
     static void SendMonitorBehaviorEvent(const EventInfo &eventInfo);
     static void SendPortalDetectInfoEvent(const std::string &ret);
+    static void SendNetworkPolicyChangeEvent(uint32_t callingUid, std::string &callingBundleName,
+        const std::string &infoStr);
 };
 } // namespace NetManagerStandard
 } // namespace OHOS
