@@ -1044,6 +1044,7 @@ void Network::UpdateGlobalHttpProxy(const HttpProxy &httpProxy)
     if (netMonitor_ == nullptr) {
         return;
     }
+    lockMonitor.unlock();
     StartNetDetection(true);
 }
 
