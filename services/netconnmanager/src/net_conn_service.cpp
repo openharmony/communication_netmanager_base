@@ -4105,7 +4105,8 @@ int32_t NetConnService::EnableDistributedClientNet(const std::string &virnicAddr
     if (netConnEventHandler_) {
         netConnEventHandler_->PostSyncTask(
             [this, &virnicAddr, &virnicName, &iif, &result]() {
-                result = this->EnableDistributedClientNetAsync(virnicAddr, virnicName, iif); });
+                result = this->EnableDistributedClientNetAsync(virnicAddr, virnicName, iif);
+            });
     }
     return result;
 }
