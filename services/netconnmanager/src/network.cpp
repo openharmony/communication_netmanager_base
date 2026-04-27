@@ -888,6 +888,7 @@ void Network::InitNetMonitor()
         netMonitor_->Start();
         return;
     }
+    lockMonitor.unlock();
     NETMGR_LOG_I("InitNetMonitor");
     std::weak_ptr<INetMonitorCallback> monitorCallback = shared_from_this();
     std::shared_lock<std::shared_mutex> lock(netLinkInfoMutex_);
@@ -896,6 +897,7 @@ void Network::InitNetMonitor()
     NetMonitorInfo netMonitorInfo;
     netMonitorInfo.isScreenOn = isScreenOn_;
     netMonitorInfo.lastDetectTime = lastDetectTime_;
+    std::unique_lock<std::shared_mutex> lockMonitor2(netMonitorMutex_);
     netMonitor_ = std::make_shared<NetMonitor>(
         netId_, netSupplierType_, netLinkInfoBck, monitorCallback, netMonitorInfo);
     if (netMonitor_ == nullptr) {
@@ -1044,6 +1046,7 @@ void Network::UpdateGlobalHttpProxy(const HttpProxy &httpProxy)
     if (netMonitor_ == nullptr) {
         return;
     }
+    lockMonitor.unlock();
     StartNetDetection(true);
 }
 
