@@ -184,7 +184,8 @@ int32_t NetConnClient::DisableVnicNetwork()
     return proxy->DisableVnicNetwork();
 }
 
-int32_t NetConnClient::EnableDistributedClientNet(const std::string &virnicAddr, const std::string &iif)
+int32_t NetConnClient::EnableDistributedClientNet(const std::string &virnicAddr,
+    const std::string &virnicName, const std::string &iif)
 {
     NETMGR_LOG_D("EnableDistributedClientNet client in.");
     sptr<INetConnService> proxy = GetProxy();
@@ -193,7 +194,7 @@ int32_t NetConnClient::EnableDistributedClientNet(const std::string &virnicAddr,
         return NETMANAGER_ERR_GET_PROXY_FAIL;
     }
 
-    return proxy->EnableDistributedClientNet(virnicAddr, iif);
+    return proxy->EnableDistributedClientNet(virnicAddr, virnicName, iif);
 }
 
 int32_t NetConnClient::EnableDistributedServerNet(const std::string &iif, const std::string &devIface,
@@ -209,7 +210,7 @@ int32_t NetConnClient::EnableDistributedServerNet(const std::string &iif, const 
     return proxy->EnableDistributedServerNet(iif, devIface, dstAddr, gw);
 }
 
-int32_t NetConnClient::DisableDistributedNet(bool isServer)
+int32_t NetConnClient::DisableDistributedNet(bool isServer, const std::string &virnicName, const std::string &dstAddr)
 {
     NETMGR_LOG_D("DisableDistributedNet client in.");
     sptr<INetConnService> proxy = GetProxy();
@@ -218,7 +219,7 @@ int32_t NetConnClient::DisableDistributedNet(bool isServer)
         return NETMANAGER_ERR_GET_PROXY_FAIL;
     }
 
-    return proxy->DisableDistributedNet(isServer);
+    return proxy->DisableDistributedNet(isServer, virnicName, dstAddr);
 }
 
 int32_t NetConnClient::RegisterNetSupplier(NetBearType bearerType, const std::string &ident,

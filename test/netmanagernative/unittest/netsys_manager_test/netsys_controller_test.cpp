@@ -1420,7 +1420,7 @@ HWTEST_F(NetsysControllerTest, EnableDistributedClientNetTest001, TestSize.Level
 {
     auto netsysController = std::make_shared<NetsysController>();
 
-    int32_t ret = netsysController->EnableDistributedClientNet("192.168.1.100", ETH0);
+    int32_t ret = netsysController->EnableDistributedClientNet("192.168.1.100", "virnic", ETH0);
     EXPECT_EQ(ret, NETSYS_NETSYSSERVICE_NULL);
 }
 
@@ -1431,7 +1431,7 @@ HWTEST_F(NetsysControllerTest, EnableDistributedClientNetTest002, TestSize.Level
     netsysControllerServiceImpl->netsysClient_->netsysNativeService_ = mockNetsysService_;
     netsysController->netsysService_ = netsysControllerServiceImpl;
 
-    int32_t ret = netsysController->EnableDistributedClientNet("192.168.1.100", ETH0);
+    int32_t ret = netsysController->EnableDistributedClientNet("192.168.1.100", "virnic", ETH0);
     EXPECT_NE(ret, NETSYS_NETSYSSERVICE_NULL);
 }
 
@@ -1458,7 +1458,9 @@ HWTEST_F(NetsysControllerTest, DisableDistributedNetTest001, TestSize.Level1)
 {
     auto netsysController = std::make_shared<NetsysController>();
 
-    int32_t ret = netsysController->DisableDistributedNet(true);
+    std::string virnicName = "virnic";
+    std::string dstAddr = "1.1.1.1";
+    int32_t ret = netsysController->DisableDistributedNet(true, virnicName, dstAddr);
     EXPECT_EQ(ret, NETSYS_NETSYSSERVICE_NULL);
 }
 
@@ -1469,7 +1471,9 @@ HWTEST_F(NetsysControllerTest, DisableDistributedNetTest002, TestSize.Level1)
     netsysControllerServiceImpl->netsysClient_->netsysNativeService_ = mockNetsysService_;
     netsysController->netsysService_ = netsysControllerServiceImpl;
 
-    int32_t ret = netsysController->DisableDistributedNet(true);
+    std::string virnicName = "virnic";
+    std::string dstAddr = "1.1.1.1";
+    int32_t ret = netsysController->DisableDistributedNet(true, virnicName, dstAddr);
     EXPECT_NE(ret, NETSYS_NETSYSSERVICE_NULL);
 }
 
@@ -1612,12 +1616,14 @@ HWTEST_F(NetsysControllerTest, EnableDistributedClientNet001, TestSize.Level1)
     netsysController->netsysService_ = netsysControllerServiceImpl;
 
     std::string virnicAddr = "1.189.55.61";
+    std::string virnicName = "virnic";
     std::string iif = "lo";
-    int32_t ret = netsysController->EnableDistributedClientNet(virnicAddr, iif);
+    int32_t ret = netsysController->EnableDistributedClientNet(virnicAddr, virnicName, iif);
     EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
 
     bool isServer = false;
-    ret = netsysController->DisableDistributedNet(isServer);
+    std::string dstAddr = "1.1.1.1";
+    ret = netsysController->DisableDistributedNet(isServer, virnicName, dstAddr);
     EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
 }
 
@@ -1636,7 +1642,8 @@ HWTEST_F(NetsysControllerTest, EnableDistributedServerNet001, TestSize.Level1)
     EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
 
     bool isServer = true;
-    ret = netsysController->DisableDistributedNet(isServer);
+    std::string virnicName = "virnic";
+    ret = netsysController->DisableDistributedNet(isServer, virnicName, dstAddr);
     EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
 }
 

@@ -114,23 +114,29 @@ int32_t NetConnServiceProxy::EnableVnicNetwork(const sptr<NetLinkInfo> &netLinkI
     return ret;
 }
 
-int32_t NetConnServiceProxy::EnableDistributedClientNet(const std::string &virnicAddr, const std::string &iif)
+int32_t NetConnServiceProxy::EnableDistributedClientNet(const std::string &virnicAddr,
+    const std::string &virnicName, const std::string &iif)
 {
     MessageParcel data;
     MessageParcel reply;
+
     if (!WriteInterfaceToken(data)) {
         NETMGR_LOG_E("WriteInterfaceToken failed");
         return NETMANAGER_ERR_WRITE_DESCRIPTOR_TOKEN_FAIL;
     }
-
+    // LCOV_EXCL_START
     if (!data.WriteString(virnicAddr)) {
+        return NETMANAGER_ERR_WRITE_DATA_FAIL;
+    }
+
+    if (!data.WriteString(virnicName)) {
         return NETMANAGER_ERR_WRITE_DATA_FAIL;
     }
 
     if (!data.WriteString(iif)) {
         return NETMANAGER_ERR_WRITE_DATA_FAIL;
     }
-
+    // LCOV_EXCL_STOP
     int32_t error =
         RemoteSendRequest(static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_ENABLE_DISTRIBUTE_CLIENT_NET), data, reply);
     if (error != NETMANAGER_SUCCESS) {
@@ -141,6 +147,7 @@ int32_t NetConnServiceProxy::EnableDistributedClientNet(const std::string &virni
     if (!reply.ReadInt32(ret)) {
         return NETMANAGER_ERR_READ_REPLY_FAIL;
     }
+
     return ret;
 }
 
@@ -185,7 +192,8 @@ int32_t NetConnServiceProxy::EnableDistributedServerNet(const std::string &iif, 
     return ret;
 }
 
-int32_t NetConnServiceProxy::DisableDistributedNet(bool isServer)
+int32_t NetConnServiceProxy::DisableDistributedNet(
+    bool isServer, const std::string &virnicName, const std::string &dstAddr)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -193,11 +201,19 @@ int32_t NetConnServiceProxy::DisableDistributedNet(bool isServer)
         NETMGR_LOG_E("WriteInterfaceToken failed");
         return NETMANAGER_ERR_WRITE_DESCRIPTOR_TOKEN_FAIL;
     }
-
+    // LCOV_EXCL_START
     if (!data.WriteBool(isServer)) {
         return NETMANAGER_ERR_WRITE_DATA_FAIL;
     }
 
+    if (!data.WriteString(virnicName)) {
+        return NETMANAGER_ERR_WRITE_DATA_FAIL;
+    }
+
+    if (!data.WriteString(dstAddr)) {
+        return NETMANAGER_ERR_WRITE_DATA_FAIL;
+    }
+    // LCOV_EXCL_STOP
     int32_t error =
         RemoteSendRequest(static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_DISABLE_DISTRIBUTE_NET), data, reply);
     if (error != NETMANAGER_SUCCESS) {

@@ -210,7 +210,8 @@ public:
         return 0;
     }
 
-    int32_t EnableDistributedClientNet(const std::string &virnicAddr, const std::string &iif) override
+    int32_t EnableDistributedClientNet(
+        const std::string &virnicAddr, const std::string &virnicName, const std::string &iif) override
     {
         return 0;
     }
@@ -221,7 +222,7 @@ public:
         return 0;
     }
 
-    int32_t DisableDistributedNet(bool isServer) override
+    int32_t DisableDistributedNet(bool isServer, const std::string &virnicName, const std::string &dstAddr) override
     {
         return 0;
     }

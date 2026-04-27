@@ -99,9 +99,7 @@ const std::string RULEIIF_NULL = "";
 const std::string RULEOIF_NULL = "";
 const std::string RULEIP_NULL = "";
 const std::string LOCAL_MANGLE_INPUT = "routectrl_mangle_INPUT";
-constexpr const char *DISTRIBUTED_TUN_CARD_NAME = "virnic";
 constexpr const char *NETSYS_ROUTE_INIT_DIR_PATH = "/data/service/el1/public/netmanager/route";
-constexpr const char *DISTRIBUTED_TUN_CARD_NAME_VETH = "virnic-veth";
 constexpr const char *IP_CMD_PATH = "/system/bin/ip";
 
 struct FibRuleUidRange {
@@ -738,12 +736,13 @@ int32_t RouteManager::UpdateVnicUidRangesRule(const std::vector<NetManagerStanda
     return ret;
 }
 
-int32_t RouteManager::EnableDistributedClientNet(const std::string &virNicAddr, const std::string &iif)
+int32_t RouteManager::EnableDistributedClientNet(const std::string &virNicAddr,
+    const std::string &virNicName, const std::string &iif)
 {
-    NETNATIVE_LOGI("EnableDistributedClientNet virNicAddr:%{public}s,iif:%{public}s",
-                   ToAnonymousIp(virNicAddr).c_str(), iif.c_str());
-    int32_t ret = DistributedManager::GetInstance().ConfigVirnicAndVeth(virNicAddr, DISTRIBUTED_TUN_CARD_NAME,
-        DISTRIBUTED_TUN_CARD_NAME_VETH);
+    NETNATIVE_LOGI("EnableDistributedClientNet virNicAddr:%{public}s,virNicName:%{public}s,iif:%{public}s",
+                   ToAnonymousIp(virNicAddr).c_str(), virNicName.c_str(), iif.c_str());
+    std::string virnicVethName = virNicName + "-veth";
+    int32_t ret = DistributedManager::GetInstance().ConfigVirnicAndVeth(virNicAddr, virNicName, virnicVethName);
     if (ret != ROUTEMANAGER_SUCCESS) {
         NETNATIVE_LOGE("ConfigVirnicAndVeth err, error is %{public}d", ret);
         return ret;
@@ -766,7 +765,7 @@ int32_t RouteManager::EnableDistributedClientNet(const std::string &virNicAddr, 
         NETNATIVE_LOGE("get gateway addr is empty");
         return ROUTEMANAGER_ERROR;
     }
-    uint32_t table = if_nametoindex(DISTRIBUTED_TUN_CARD_NAME);
+    uint32_t table = if_nametoindex(virNicName.c_str());
     if (table == 0) {
         NETNATIVE_LOGE("create Virnic Route, if_nametoindex error %{public}d", errno);
         return -errno;
@@ -775,7 +774,7 @@ int32_t RouteManager::EnableDistributedClientNet(const std::string &virNicAddr, 
 
     std::string out;
     std::string createVirnicRoute = std::string(IP_CMD_PATH) + " route add default via " + virNicVethAddr +
-        " dev " + DISTRIBUTED_TUN_CARD_NAME + " table " + std::to_string(table) + " proto static";
+        " dev " + virNicName + " table " + std::to_string(table) + " proto static";
     NETNATIVE_LOGI("create Virnic Route: %{public}s", CommonUtils::AnonymousIpInStr(createVirnicRoute).c_str());
     if (CommonUtils::ForkExec(createVirnicRoute.c_str(), &out) != ROUTEMANAGER_SUCCESS) {
         NETNATIVE_LOGE("create Virnic Route failed, output %{public}s", out.c_str());
@@ -872,7 +871,7 @@ int32_t RouteManager::EnableDistributedServerNet(const std::string &iif, const s
     return ret;
 }
 
-int32_t RouteManager::DisableDistributedNet(bool isServer)
+int32_t RouteManager::DisableDistributedNet(bool isServer, const std::string &virnicName, const std::string &dstAddr)
 {
     NETNATIVE_LOGI("DisableDistributedNet Enter, isServer:%{public}d", isServer);
     RuleInfo ruleInfo;
@@ -888,37 +887,34 @@ int32_t RouteManager::DisableDistributedNet(bool isServer)
     }
     RouteInfo routeInfo;
     routeInfo.routeTable = ROUTE_DISTRIBUTE_TO_CLIENT_TABLE;
-    routeInfo.routeInterfaceName = DISTRIBUTED_TUN_CARD_NAME;
+    routeInfo.routeInterfaceName = virnicName;
     routeInfo.routeDestinationName = "0.0.0.0/0";
     routeInfo.routeNextHop = "0.0.0.0";
     int32_t ret = ROUTEMANAGER_SUCCESS;
     if (isServer) {
-        ret += UpdateDistributedRule(RTM_DELRULE, FR_ACT_TO_TBL, ruleInfo, INVALID_UID, INVALID_UID);
-        if (ret != ROUTEMANAGER_SUCCESS) {
-            NETNATIVE_LOGE("del server uplink rule err, rule prio is %{public}d", ruleInfo.rulePriority);
-        }
-        ret += UpdateDistributedRule(RTM_DELRULE, FR_ACT_TO_TBL, ruleInfo, INVALID_UID, INVALID_UID);
-        if (ret != ROUTEMANAGER_SUCCESS) {
-            NETNATIVE_LOGE("del server downlink rule err, rule prio is %{public}d", ruleInfo.rulePriority);
-        }
-        routeInfo.routeTable = ROUTE_DISTRIBUTE_FROM_CLIENT_TABLE;
-        routeInfo.routeInterfaceName = DistributedManager::GetInstance().GetServerDevIfaceNic();
-        ret += UpdateRouteRule(RTM_DELROUTE, NLM_F_EXCL, routeInfo);
-        if (ret != ROUTEMANAGER_SUCCESS) {
-            NETNATIVE_LOGE("del server uplink route err, route table is %{public}d", routeInfo.routeTable);
-        }
-        routeInfo.routeTable = ROUTE_DISTRIBUTE_TO_CLIENT_TABLE;
-        routeInfo.routeInterfaceName = DistributedManager::GetInstance().GetServerIifNic();
-        ret += UpdateRouteRule(RTM_DELROUTE, NLM_F_EXCL, routeInfo);
-        if (ret != ROUTEMANAGER_SUCCESS) {
-            NETNATIVE_LOGE("del server downlink route err, route table is %{public}d", routeInfo.routeTable);
+        if (dstAddr != "") {
+            ruleInfo.ruleDstIp = dstAddr;
+            ruleInfo.ruleTable = ROUTE_DISTRIBUTE_TO_CLIENT_TABLE;
+            ret += UpdateDistributedRule(RTM_DELRULE, FR_ACT_TO_TBL, ruleInfo, INVALID_UID, INVALID_UID);
+        } else {
+            ret += UpdateDistributedRule(RTM_DELRULE, FR_ACT_TO_TBL, ruleInfo, INVALID_UID, INVALID_UID);
+            ret += UpdateDistributedRule(RTM_DELRULE, FR_ACT_TO_TBL, ruleInfo, INVALID_UID, INVALID_UID);
+
+            routeInfo.routeTable = ROUTE_DISTRIBUTE_FROM_CLIENT_TABLE;
+            routeInfo.routeInterfaceName = DistributedManager::GetInstance().GetServerDevIfaceNic();
+            ret += UpdateRouteRule(RTM_DELROUTE, NLM_F_EXCL, routeInfo);
+            
+            routeInfo.routeTable = ROUTE_DISTRIBUTE_TO_CLIENT_TABLE;
+            routeInfo.routeInterfaceName = DistributedManager::GetInstance().GetServerIifNic();
+            ret += UpdateRouteRule(RTM_DELROUTE, NLM_F_EXCL, routeInfo);
         }
     } else {
         ret += UpdateDistributedRule(RTM_DELRULE, FR_ACT_TO_TBL, ruleInfo, INVALID_UID, INVALID_UID);
-        if (ret != ROUTEMANAGER_SUCCESS) {
-            NETNATIVE_LOGE("del client rule err, rule prio is %{public}d", ruleInfo.rulePriority);
-        }
-        DistributedManager::GetInstance().DisableVirnic(DISTRIBUTED_TUN_CARD_NAME);
+        DistributedManager::GetInstance().DisableVirnic(virnicName);
+    }
+    if (ret != ROUTEMANAGER_SUCCESS) {
+        NETNATIVE_LOGE("DisableDistributedNet err, virnicName:%{public}s, dstAddr:%{public}s",
+            virnicName.c_str(), ToAnonymousIp(dstAddr).c_str());
     }
     return ret;
 }

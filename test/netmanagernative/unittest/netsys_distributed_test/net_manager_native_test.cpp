@@ -52,11 +52,13 @@ void NetManagerNativeTest::TearDown() {}
 HWTEST_F(NetManagerNativeTest, EnableDistributedClientNet001, TestSize.Level1)
 {
     std::string virnicAddr = "1.189.55.61";
+    std::string virnicName = "virnic";
     std::string iif = "lo";
-    auto ret = instance_->EnableDistributedClientNet(virnicAddr, iif);
+    auto ret = instance_->EnableDistributedClientNet(virnicAddr, virnicName, iif);
 
     bool isServer = false;
-    ret = instance_->DisableDistributedNet(isServer);
+    std::string dstAddr = "1.1.1.1";
+    ret = instance_->DisableDistributedNet(isServer, virnicName, dstAddr);
     EXPECT_TRUE(ret == NetManagerStandard::NETMANAGER_SUCCESS || ret == NETMANAGER_ERR_INTERNAL);
 }
 
@@ -69,8 +71,9 @@ HWTEST_F(NetManagerNativeTest, EnableDistributedServerNet001, TestSize.Level1)
     auto ret = instance_->EnableDistributedServerNet(iif, devIface, dstAddr, gw);
     EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
 
-    bool isServer = true;
-    ret = instance_->DisableDistributedNet(isServer);
+    bool isServer = false;
+    std::string virnicName = "virnic";
+    ret = instance_->DisableDistributedNet(isServer, virnicName, dstAddr);
 }
 
 HWTEST_F(NetManagerNativeTest, NetworkAddRoute001, TestSize.Level1)

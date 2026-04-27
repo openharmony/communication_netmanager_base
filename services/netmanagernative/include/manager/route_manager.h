@@ -280,7 +280,8 @@ public:
      * @param iif iif name to config route
      * @return Returns 0, enable successfully, otherwise it will fail
      */
-    static int32_t EnableDistributedClientNet(const std::string &virNicAddr, const std::string &iif);
+    static int32_t EnableDistributedClientNet(const std::string &virnicAddr,
+        const std::string &virnicName, const std::string &iif);
 
     /**
      * Enable distribute client net: config route
@@ -299,7 +300,7 @@ public:
      * @param isServer true:server, false:client
      * @return Returns 0, disable successfully, otherwise it will fail
      */
-    static int32_t DisableDistributedNet(bool isServer);
+    static int32_t DisableDistributedNet(bool isServer, const std::string &virnicName, const std::string &dstAddr);
 
 #ifdef SUPPORT_SYSVPN
     /**

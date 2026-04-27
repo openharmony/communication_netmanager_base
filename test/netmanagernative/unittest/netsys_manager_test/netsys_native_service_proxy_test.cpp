@@ -195,14 +195,16 @@ HWTEST_F(NetsysNativeServiceProxyTest, InterfaceSetIffUpTest001, TestSize.Level1
 HWTEST_F(NetsysNativeServiceProxyTest, EnableDistributedClientNetTest001, TestSize.Level1)
 {
     OHOS::sptr<OHOS::NetsysNative::INetsysService> netsysNativeService = ConnManagerGetProxy();
-    int32_t ret = netsysNativeService->EnableDistributedClientNet("192.168.113.209", INTERFACENAME);
+    int32_t ret = netsysNativeService->EnableDistributedClientNet("192.168.113.209", "virnic", INTERFACENAME);
     EXPECT_NE(ret, ERR_FLATTEN_OBJECT);
 }
 
 HWTEST_F(NetsysNativeServiceProxyTest, DisableDistributedNetTest001, TestSize.Level1)
 {
     OHOS::sptr<OHOS::NetsysNative::INetsysService> netsysNativeService = ConnManagerGetProxy();
-    int32_t ret = netsysNativeService->DisableDistributedNet(true);
+    std::string virnicName = "virnic";
+    std::string dstAddr = "1.1.1.1";
+    int32_t ret = netsysNativeService->DisableDistributedNet(true, virnicName, dstAddr);
     EXPECT_NE(ret, ERR_FLATTEN_OBJECT);
 }
 
@@ -585,12 +587,14 @@ HWTEST_F(NetsysNativeServiceProxyTest, EnableDistributedClientNet001, TestSize.L
     ASSERT_NE(netsysNativeService, nullptr);
 
     std::string virnicAddr = "1.189.55.61";
+    std::string virnicName = "virnic";
     std::string iif = "lo";
-    int32_t ret = netsysNativeService->EnableDistributedClientNet(virnicAddr, iif);
+    int32_t ret = netsysNativeService->EnableDistributedClientNet(virnicAddr, virnicName, iif);
     EXPECT_GE(ret, -19);
 
     bool isServer = false;
-    ret = netsysNativeService->DisableDistributedNet(isServer);
+    std::string dstAddr = "1.1.1.1";
+    ret = netsysNativeService->DisableDistributedNet(isServer, virnicName, dstAddr);
     EXPECT_GE(ret, -1);
 }
 
@@ -607,7 +611,8 @@ HWTEST_F(NetsysNativeServiceProxyTest, EnableDistributedServerNet001, TestSize.L
     EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
 
     bool isServer = true;
-    ret = netsysNativeService->DisableDistributedNet(isServer);
+    std::string virnicName = "virnic";
+    ret = netsysNativeService->DisableDistributedNet(isServer, virnicName, dstAddr);
     EXPECT_GE(ret, NetManagerStandard::NETMANAGER_SUCCESS);
 }
 
