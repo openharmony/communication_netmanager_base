@@ -121,12 +121,13 @@ void NetConnServiceProxyTest::TearDown() {}
 HWTEST_F(NetConnServiceProxyTest, EnableDistributedClientNet001, TestSize.Level1)
 {
     std::string virnicAddr = "1.189.55.61";
+    std::string virnicName = "virnic";
     std::string iif = "lo";
-    int32_t ret = instance_->EnableDistributedClientNet(virnicAddr, iif);
+    int32_t ret = instance_->EnableDistributedClientNet(virnicAddr, virnicName, iif);
     EXPECT_EQ(ret, NETMANAGER_SUCCESS);
 
-    bool isServer = false;
-    ret = instance_->DisableDistributedNet(isServer);
+    std::string dstAddr = "1.1.1.1";
+    ret = instance_->DisableDistributedNet(isServer, virnicName, dstAddr);
     EXPECT_NE(ret, NETMANAGER_SUCCESS);
 }
 
@@ -145,8 +146,8 @@ HWTEST_F(NetConnServiceProxyTest, EnableDistributedServerNet001, TestSize.Level1
     int32_t ret = instance_->EnableDistributedServerNet(iif, devIface, dstAddr, gw);
     EXPECT_GE(ret, NETMANAGER_SUCCESS);
 
-    bool isServer = true;
-    ret = instance_->DisableDistributedNet(isServer);
+    std::string virnicName = "virnic";
+    ret = instance_->DisableDistributedNet(isServer, virnicName, dstAddr);
     EXPECT_NE(ret, NETMANAGER_SUCCESS);
 }
 }

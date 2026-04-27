@@ -226,7 +226,8 @@ public:
         return 0;
     }
 
-    int32_t EnableDistributedClientNet(const std::string &virnicAddr, const std::string &iif) override
+    int32_t EnableDistributedClientNet(
+        const std::string &virnicAddr, const std::string &virnicName, const std::string &iif) override
     {
         return 0;
     }
@@ -237,7 +238,7 @@ public:
         return 0;
     }
 
-    int32_t DisableDistributedNet(bool isServer) override
+    int32_t DisableDistributedNet(bool isServer, const std::string &virnicName, const std::string &dstAddr) override
     {
         return 0;
     }
@@ -757,9 +758,13 @@ HWTEST_F(NetsysNativeServiceStubTest, CmdEnableDistributedClientNet001, TestSize
     MessageParcel data;
     MessageParcel reply;
     std::string virnicAddr = "1.189.55.60";
+    std::string virnicName = "virnic";
     std::string iif = "lo";
     ASSERT_NE(data.WriteInterfaceToken(NetsysNativeServiceStub::GetDescriptor()), false);
     if (!data.WriteString(virnicAddr)) {
+        return;
+    }
+    if (!data.WriteString(virnicName)) {
         return;
     }
     if (!data.WriteString(iif)) {
@@ -800,9 +805,17 @@ HWTEST_F(NetsysNativeServiceStubTest, CmdDisableDistributedNet001, TestSize.Leve
     MessageParcel data;
     MessageParcel reply;
     bool isServer = true;
+    std::string virnicName = "virnic";
+    std::string dstAddr = "1.1.1.1";
     ASSERT_NE(data.WriteInterfaceToken(NetsysNativeServiceStub::GetDescriptor()), false);
 
     if (!data.WriteBool(isServer)) {
+        return;
+    }
+    if (!data.WriteString(virnicName)) {
+        return;
+    }
+    if (!data.WriteString(dstAddr)) {
         return;
     }
     int32_t ret = notifyStub_->CmdDisableDistributedNet(data, reply);
