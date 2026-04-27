@@ -663,6 +663,7 @@ HWTEST_F(NetworkTest, NetDetectionForDnsHealthTest001, TestSize.Level1)
 {
     int32_t netId = 1;
     auto network = std::make_shared<Network>(netId, netId, NetBearType::BEARER_ETHERNET, nullptr);
+    network->NetDetectionForDnsHealth(false);
     network->InitNetMonitor();
     EXPECT_NE(network->netMonitor_, nullptr);
     network->detectResult_ = INVALID_DETECTION_STATE;
@@ -917,6 +918,8 @@ HWTEST_F(NetworkTest, SetScreenStateTest002, TestSize.Level1)
     auto network = std::make_shared<Network>(netId, netId, NetBearType::BEARER_ETHERNET, nullptr);
     network->InitNetMonitor();
     EXPECT_NE(network->netMonitor_, nullptr);
+    network->InitNetMonitor();
+    EXPECT_NE(network->netMonitor_, nullptr);
     network->SetScreenState(false);
 }
 
@@ -1160,6 +1163,18 @@ HWTEST_F(NetworkTest, UpdateGlobalHttpProxyTest001, TestSize.Level1)
     probeThread->httpProbe_ = nullptr;
     HttpProxy httpProxy;
     probeThread->UpdateGlobalHttpProxy(httpProxy);
+}
+
+HWTEST_F(NetworkTest, UpdateGlobalHttpProxyTest002, TestSize.Level1)
+{
+    int32_t netId = 1;
+    auto network = std::make_shared<Network>(netId, netId, NetBearType::BEARER_CELLULAR, nullptr);
+    network->netMonitor_ = nullptr;
+    HttpProxy httpProxy;
+    network->UpdateGlobalHttpProxy(httpProxy);
+    network->InitNetMonitor();
+    network->UpdateGlobalHttpProxy(httpProxy);
+    EXPECT_NE(network->netMonitor_, nullptr);
 }
 
 HWTEST_F(NetworkTest, CurlGlobalCleanupTest001, TestSize.Level1)
