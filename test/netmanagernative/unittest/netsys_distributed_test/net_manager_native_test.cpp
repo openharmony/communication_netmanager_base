@@ -71,7 +71,7 @@ HWTEST_F(NetManagerNativeTest, EnableDistributedServerNet001, TestSize.Level1)
     auto ret = instance_->EnableDistributedServerNet(iif, devIface, dstAddr, gw);
     EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
 
-    bool isServer = false;
+    bool isServer = true;
     std::string virnicName = "virnic";
     ret = instance_->DisableDistributedNet(isServer, virnicName, dstAddr);
 }
