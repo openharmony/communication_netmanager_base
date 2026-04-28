@@ -457,7 +457,7 @@ int32_t NetConnServiceStub::OnEnableDistributedClientNet(MessageParcel &data, Me
         return NETMANAGER_ERR_READ_DATA_FAIL;
     }
     std::string virnicName = "";
-    if (!data.ReadString(virnicAddr)) {
+    if (!data.ReadString(virnicName)) {
         return NETMANAGER_ERR_READ_DATA_FAIL;
     }
     std::string iif = "";
