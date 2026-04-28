@@ -62,21 +62,25 @@ void NetsysNativeServiceTest::TearDown() {}
 HWTEST_F(NetsysNativeServiceTest, EnableDistributedClientNet001, TestSize.Level1)
 {
     std::string virnicAddr = "1.189.55.60";
+    std::string virnicName = "virnic";
     std::string iif = "lo";
-    int32_t ret = instance_->EnableDistributedClientNet(virnicAddr, iif);
+    int32_t ret = instance_->EnableDistributedClientNet(virnicAddr, virnicName, iif);
     bool isServer = false;
-    ret = instance_->DisableDistributedNet(isServer);
+    std::string dstAddr = "1.1.1.1";
+    ret = instance_->DisableDistributedNet(isServer, virnicName, dstAddr);
     EXPECT_TRUE(ret == NetManagerStandard::NETMANAGER_SUCCESS || ret == NETMANAGER_ERR_INTERNAL);
 }
 
 HWTEST_F(NetsysNativeServiceTest, EnableDistributedClientNet002, TestSize.Level1)
 {
     std::string virnicAddr = "";
+    std::string virnicName = "virnic";
     std::string iif = "";
-    int32_t ret = instance_->EnableDistributedClientNet(virnicAddr, iif);
+    int32_t ret = instance_->EnableDistributedClientNet(virnicAddr, virnicName, iif);
     EXPECT_NE(ret, NetManagerStandard::NETMANAGER_SUCCESS);
     bool isServer = false;
-    ret = instance_->DisableDistributedNet(isServer);
+    std::string dstAddr = "1.1.1.1";
+    ret = instance_->DisableDistributedNet(isServer, virnicName, dstAddr);
 }
 
 HWTEST_F(NetsysNativeServiceTest, EnableDistributedServerNet001, TestSize.Level1)
@@ -88,7 +92,8 @@ HWTEST_F(NetsysNativeServiceTest, EnableDistributedServerNet001, TestSize.Level1
     int32_t ret = instance_->EnableDistributedServerNet(iif, devIface, dstAddr, gw);
     EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
     bool isServer = true;
-    ret = instance_->DisableDistributedNet(isServer);
+    std::string virnicName = "virnic";
+    ret = instance_->DisableDistributedNet(isServer, virnicName, dstAddr);
 }
 HWTEST_F(NetsysNativeServiceTest, EnableDistributedServerNet002, TestSize.Level1)
 {
@@ -99,22 +104,24 @@ HWTEST_F(NetsysNativeServiceTest, EnableDistributedServerNet002, TestSize.Level1
     int32_t ret = instance_->EnableDistributedServerNet(iif, devIface, dstAddr, gw);
     EXPECT_NE(ret, NetManagerStandard::NETMANAGER_SUCCESS);
     bool isServer = true;
-    ret = instance_->DisableDistributedNet(isServer);
+    std::string virnicName = "virnic";
+    ret = instance_->DisableDistributedNet(isServer, virnicName, dstAddr);
     EXPECT_NE(ret, NetManagerStandard::NETMANAGER_SUCCESS);
 }
 
 HWTEST_F(NetsysNativeServiceTest, EnableDistributedClientNet003, TestSize.Level1)
 {
     std::string virnicAddr = "1.189.55.60";
+    std::string virnicName = "virnic";
     std::string iif = "lo";
-    int32_t ret = instance_->EnableDistributedClientNet(virnicAddr, iif);
+    int32_t ret = instance_->EnableDistributedClientNet(virnicAddr, virnicName, iif);
     virnicAddr = "";
-    instance_->EnableDistributedClientNet(virnicAddr, iif);
+    instance_->EnableDistributedClientNet(virnicAddr, virnicName, iif);
     virnicAddr = "1.189.55.60";
     iif = "";
-    instance_->EnableDistributedClientNet(virnicAddr, iif);
+    instance_->EnableDistributedClientNet(virnicAddr, virnicName, iif);
     virnicAddr = "";
-    ret = instance_->EnableDistributedClientNet(virnicAddr, iif);
+    ret = instance_->EnableDistributedClientNet(virnicAddr, virnicName, iif);
     EXPECT_NE(ret, NetManagerStandard::NETMANAGER_SUCCESS);
 }
 

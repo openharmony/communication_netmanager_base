@@ -1502,8 +1502,10 @@ void CmdEnableDistributedClientNetFuzzTest(const uint8_t *data, size_t size)
     }
 
     std::string virnicAddr = NetSysGetString(STR_LEN);
+    std::string virnicName = NetSysGetString(STR_LEN);
     std::string iif = NetSysGetString(STR_LEN);
     dataParcel.WriteString(virnicAddr);
+    dataParcel.WriteString(virnicName);
     dataParcel.WriteString(iif);
     OnRemoteRequest(static_cast<uint32_t>(NetsysNative::NetsysInterfaceCode::NETSYS_ENABLE_DISTRIBUTE_CLIENT_NET),
                     dataParcel);
@@ -1536,7 +1538,11 @@ void CmdDisableDistributedNetFuzzTest(const uint8_t *data, size_t size)
     }
 
     bool isServer = NetSysGetData<bool>();
+    std::string virnicName = NetSysGetString(STR_LEN);
+    std::string dstAddr = NetSysGetString(STR_LEN);
     dataParcel.WriteBool(isServer);
+    dataParcel.WriteString(virnicName);
+    dataParcel.WriteString(dstAddr);
     OnRemoteRequest(static_cast<uint32_t>(NetsysNative::NetsysInterfaceCode::NETSYS_DISABLE_DISTRIBUTE_NET),
                     dataParcel);
 }

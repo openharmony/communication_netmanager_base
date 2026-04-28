@@ -405,10 +405,11 @@ public:
         uint32_t& supplierId) override;
     int32_t EnableVnicNetwork(const sptr<NetLinkInfo> &netLinkInfo, const std::set<int32_t> &uids) override;
     int32_t DisableVnicNetwork() override;
-    int32_t EnableDistributedClientNet(const std::string &virnicAddr, const std::string &iif) override;
+    int32_t EnableDistributedClientNet(const std::string &virnicAddr, const std::string &virnicName,
+                                       const std::string &iif) override;
     int32_t EnableDistributedServerNet(const std::string &iif, const std::string &devIface,
                                        const std::string &dstAddr, const std::string &gw) override;
-    int32_t DisableDistributedNet(bool isServer) override;
+    int32_t DisableDistributedNet(bool isServer, const std::string &virnicName, const std::string &dstAddr) override;
     int32_t CloseSocketsUid(int32_t netId, uint32_t uid) override;
     int32_t SetPacUrl(const std::string &pacUrl) override;
     int32_t GetPacUrl(std::string &pacUrl) override;
@@ -600,10 +601,11 @@ private:
     }
     int32_t EnableVnicNetworkAsync(const sptr<NetLinkInfo> &netLinkInfo, const std::set<int32_t> &uids);
     int32_t DisableVnicNetworkAsync();
-    int32_t EnableDistributedClientNetAsync(const std::string &virnicAddr, const std::string &iif);
+    int32_t EnableDistributedClientNetAsync(const std::string &virnicAddr,
+        const std::string &virnicName, const std::string &iif);
     int32_t EnableDistributedServerNetAsync(const std::string &iif, const std::string &devIface,
                                             const std::string &dstAddr, const std::string &gw);
-    int32_t DisableDistributedNetAsync(bool isServer);
+    int32_t DisableDistributedNetAsync(bool isServer, const std::string &virnicName, const std::string &dstAddr);
     int32_t CloseSocketsUidAsync(int32_t netId, uint32_t uid);
     int32_t SetAppIsFrozenedAsync(uint32_t uid, bool isFrozened);
     int32_t EnableAppFrozenedCallbackLimitationAsync(bool flag);

@@ -73,10 +73,11 @@ int32_t NetsysControllerServiceImpl::DestroyVnic()
     return netsysClient_->DestroyVnic();
 }
 
-int32_t NetsysControllerServiceImpl::EnableDistributedClientNet(const std::string &virnicAddr, const std::string &iif)
+int32_t NetsysControllerServiceImpl::EnableDistributedClientNet(const std::string &virnicAddr,
+    const std::string &virnicName, const std::string &iif)
 {
     NETMGR_LOG_I("EnableDistributedClientNet");
-    return netsysClient_->EnableDistributedClientNet(virnicAddr, iif);
+    return netsysClient_->EnableDistributedClientNet(virnicAddr, virnicName, iif);
 }
 
 int32_t NetsysControllerServiceImpl::EnableDistributedServerNet(const std::string &iif, const std::string &devIface,
@@ -86,10 +87,11 @@ int32_t NetsysControllerServiceImpl::EnableDistributedServerNet(const std::strin
     return netsysClient_->EnableDistributedServerNet(iif, devIface, dstAddr, gw);
 }
 
-int32_t NetsysControllerServiceImpl::DisableDistributedNet(bool isServer)
+int32_t NetsysControllerServiceImpl::DisableDistributedNet(
+    bool isServer, const std::string &virnicName, const std::string &dstAddr)
 {
     NETMGR_LOG_I("DisableDistributedNet");
-    return netsysClient_->DisableDistributedNet(isServer);
+    return netsysClient_->DisableDistributedNet(isServer, virnicName, dstAddr);
 }
 
 int32_t NetsysControllerServiceImpl::NetworkAddUids(int32_t netId, const std::vector<UidRange> &uidRanges)

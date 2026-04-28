@@ -1087,22 +1087,27 @@ int32_t NetsysNativeServiceProxy::DestroyVnic()
     return reply.ReadInt32();
 }
 
-int32_t NetsysNativeServiceProxy::EnableDistributedClientNet(const std::string &virnicAddr, const std::string &iif)
+int32_t NetsysNativeServiceProxy::EnableDistributedClientNet(const std::string &virnicAddr,
+    const std::string &virnicName, const std::string &iif)
 {
     NETNATIVE_LOGI("Begin to EnableDistributedClientNet");
     MessageParcel data;
     if (!WriteInterfaceToken(data)) {
         return ERR_FLATTEN_OBJECT;
     }
-
+    // LCOV_EXCL_START
     if (!data.WriteString(virnicAddr)) {
+        return ERR_FLATTEN_OBJECT;
+    }
+
+    if (!data.WriteString(virnicName)) {
         return ERR_FLATTEN_OBJECT;
     }
 
     if (!data.WriteString(iif)) {
         return ERR_FLATTEN_OBJECT;
     }
-
+    // LCOV_EXCL_STOP
     MessageParcel reply;
     MessageOption option;
     int32_t ret =
@@ -1160,18 +1165,27 @@ int32_t NetsysNativeServiceProxy::EnableDistributedServerNet(const std::string &
     return ret;
 }
 
-int32_t NetsysNativeServiceProxy::DisableDistributedNet(bool isServer)
+int32_t NetsysNativeServiceProxy::DisableDistributedNet(
+    bool isServer, const std::string &virnicName, const std::string &dstAddr)
 {
     NETNATIVE_LOGI("Begin to DisableDistributedNet");
     MessageParcel data;
     if (!WriteInterfaceToken(data)) {
         return ERR_FLATTEN_OBJECT;
     }
-
+    // LCOV_EXCL_START
     if (!data.WriteBool(isServer)) {
         return ERR_FLATTEN_OBJECT;
     }
 
+    if (!data.WriteString(virnicName)) {
+        return ERR_FLATTEN_OBJECT;
+    }
+
+    if (!data.WriteString(dstAddr)) {
+        return ERR_FLATTEN_OBJECT;
+    }
+    // LCOV_EXCL_STOP
     MessageParcel reply;
     MessageOption option;
     int32_t ret =

@@ -1682,6 +1682,7 @@ void UnregisterPreAirplaneCallbackFuzzTest(const uint8_t *data, size_t size)
 void EnableDistributedClientNetFuzzTest(const uint8_t *data, size_t size)
 {
     std::string virnicAddr = NetConnGetString(STR_LEN);
+    std::string virnicName = NetConnGetString(STR_LEN);
     std::string iif = NetConnGetString(STR_LEN);
     MessageParcel dataParcel;
     if (!IsConnClientDataAndSizeValid(data, size, dataParcel)) {
@@ -1689,6 +1690,7 @@ void EnableDistributedClientNetFuzzTest(const uint8_t *data, size_t size)
         return;
     }
     dataParcel.WriteString(virnicAddr);
+    dataParcel.WriteString(virnicName);
     dataParcel.WriteString(iif);
     OnRemoteRequest(static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_ENABLE_DISTRIBUTE_CLIENT_NET), dataParcel);
 }
@@ -1715,12 +1717,16 @@ void EnableDistributedServerNetFuzzTest(const uint8_t *data, size_t size)
 void DisableDistributedNetFuzzTest(const uint8_t *data, size_t size)
 {
     bool isServer = NetConnGetData<bool>();
+    std::string virnicName = NetConnGetString(STR_LEN);
+    std::string dstAddr = NetConnGetString(STR_LEN);
     MessageParcel dataParcel;
     if (!IsConnClientDataAndSizeValid(data, size, dataParcel)) {
         NETMGR_LOG_D("EnableDistributedClientNetFuzzTest write token failed or invalid parameter.");
         return;
     }
     dataParcel.WriteBool(isServer);
+    dataParcel.WriteString(virnicName);
+    dataParcel.WriteString(dstAddr);
     OnRemoteRequest(static_cast<uint32_t>(ConnInterfaceCode::CMD_NM_DISABLE_DISTRIBUTE_NET), dataParcel);
 }
 

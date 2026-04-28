@@ -44,10 +44,12 @@ void RouteManagerTest::TearDown() {}
 HWTEST_F(RouteManagerTest, EnableDistributedClientNet001, TestSize.Level1)
 {
     std::string virnicAddr = "1.189.55.61";
+    std::string virnicName = "virnic";
     std::string iif = "lo";
-    auto ret = RouteManager::EnableDistributedClientNet(virnicAddr, iif);
+    auto ret = RouteManager::EnableDistributedClientNet(virnicAddr, virnicName, iif);
     bool isServer = false;
-    ret = RouteManager::DisableDistributedNet(isServer);
+    std::string dstAddr = "1.1.1.1";
+    ret = RouteManager::DisableDistributedNet(isServer, virnicName, dstAddr);
     EXPECT_TRUE(ret == 0 || ret == NETMANAGER_ERR_INTERNAL);
 }
 
@@ -60,7 +62,8 @@ HWTEST_F(RouteManagerTest, EnableDistributedServerNet001, TestSize.Level1)
     auto ret = RouteManager::EnableDistributedServerNet(iif, devIface, dstAddr, gw);
     EXPECT_EQ(ret, 0);
     bool isServer = true;
-    ret = RouteManager::DisableDistributedNet(isServer);
+    std::string virnicName = "virnic";
+    ret = RouteManager::DisableDistributedNet(isServer, virnicName, dstAddr);
 }
 } // namespace nmd
 } // namespace OHOS

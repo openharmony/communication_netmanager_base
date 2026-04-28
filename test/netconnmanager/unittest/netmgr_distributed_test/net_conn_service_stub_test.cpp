@@ -65,6 +65,8 @@ HWTEST_F(NetConnServiceStubTest, OnEnableDistributedClientNet001, TestSize.Level
     ASSERT_NE(data.WriteInterfaceToken(NetConnServiceStub::GetDescriptor()), false);
     std::string virnicAddr = "1.189.55.61";
     ASSERT_NE(data.WriteString(virnicAddr), false);
+    std::string virnicName = "virnic";
+    ASSERT_NE(data.WriteString(virnicName), false);
     std::string iif = "wlan0";
     ASSERT_NE(data.WriteString(iif), false);
     int32_t ret = SendRemoteRequest(data, ConnInterfaceCode::CMD_NM_ENABLE_DISTRIBUTE_CLIENT_NET);

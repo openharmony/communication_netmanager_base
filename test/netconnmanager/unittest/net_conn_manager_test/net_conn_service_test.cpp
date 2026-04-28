@@ -1754,30 +1754,32 @@ HWTEST_F(NetConnServiceTest, DisableVnicNetworkTest001, TestSize.Level1)
 HWTEST_F(NetConnServiceTest, EnableDistributedClientNetTest001, TestSize.Level1)
 {
     std::string virnicAddr = "127.0.0.1";
+    std::string virnicName = "virnic";
     std::string iif = "iif";
     NetConnService::GetInstance()->netConnEventHandler_ = nullptr;
-    int32_t ret = NetConnService::GetInstance()->EnableDistributedClientNet(virnicAddr, iif);
+    int32_t ret = NetConnService::GetInstance()->EnableDistributedClientNet(virnicAddr, virnicName, iif);
     ASSERT_EQ(ret, NETMANAGER_ERROR);
     NetConnService::GetInstance()->Init();
-    ret = NetConnService::GetInstance()->EnableDistributedClientNet(virnicAddr, iif);
+    ret = NetConnService::GetInstance()->EnableDistributedClientNet(virnicAddr, virnicName, iif);
     ASSERT_EQ(ret, NETMANAGER_ERROR);
 }
 
 HWTEST_F(NetConnServiceTest, EnableDistributedClientNetTest002, TestSize.Level1)
 {
     std::string virnicAddr = "";
+    std::string virnicName = "virnic";
     std::string iif = "";
-    int32_t ret = NetConnService::GetInstance()->EnableDistributedClientNetAsync(virnicAddr, iif);
+    int32_t ret = NetConnService::GetInstance()->EnableDistributedClientNetAsync(virnicAddr, virnicName, iif);
     ASSERT_EQ(ret, NET_CONN_ERR_INVALID_NETWORK);
     iif = "iif";
-    ret = NetConnService::GetInstance()->EnableDistributedClientNetAsync(virnicAddr, iif);
+    ret = NetConnService::GetInstance()->EnableDistributedClientNetAsync(virnicAddr, virnicName, iif);
     ASSERT_EQ(ret, NET_CONN_ERR_INVALID_NETWORK);
     virnicAddr = "127.0.0.1";
     NetConnService::GetInstance()->netConnEventHandler_ = nullptr;
-    ret = NetConnService::GetInstance()->EnableDistributedClientNetAsync(virnicAddr, iif);
+    ret = NetConnService::GetInstance()->EnableDistributedClientNetAsync(virnicAddr, virnicName, iif);
     ASSERT_EQ(ret, NETMANAGER_SUCCESS);
     NetConnService::GetInstance()->Init();
-    ret = NetConnService::GetInstance()->EnableDistributedClientNetAsync(virnicAddr, iif);
+    ret = NetConnService::GetInstance()->EnableDistributedClientNetAsync(virnicAddr, virnicName, iif);
     ASSERT_EQ(ret, NETMANAGER_SUCCESS);
 }
 
@@ -1818,18 +1820,20 @@ HWTEST_F(NetConnServiceTest, EnableDistributedServerNetTest002, TestSize.Level1)
 HWTEST_F(NetConnServiceTest, DisableDistributedNetTest001, TestSize.Level1)
 {
     bool isServer = false;
+    std::string virnicName = "virnic";
+    std::string dstAddr = "1.1.1.1";
     NetConnService::GetInstance()->netConnEventHandler_ = nullptr;
-    int32_t ret = NetConnService::GetInstance()->DisableDistributedNet(isServer);
+    int32_t ret = NetConnService::GetInstance()->DisableDistributedNet(isServer, virnicName, dstAddr);
     ASSERT_EQ(ret, NETMANAGER_ERROR);
     NetConnService::GetInstance()->Init();
-    ret = NetConnService::GetInstance()->DisableDistributedNet(isServer);
+    ret = NetConnService::GetInstance()->DisableDistributedNet(isServer, virnicName, dstAddr);
     ASSERT_EQ(ret, NETMANAGER_ERROR);
 
     NetConnService::GetInstance()->netConnEventHandler_ = nullptr;
-    ret = NetConnService::GetInstance()->DisableDistributedNetAsync(isServer);
+    ret = NetConnService::GetInstance()->DisableDistributedNetAsync(isServer, virnicName, dstAddr);
     ASSERT_EQ(ret, NETMANAGER_SUCCESS);
     NetConnService::GetInstance()->Init();
-    ret = NetConnService::GetInstance()->DisableDistributedNetAsync(isServer);
+    ret = NetConnService::GetInstance()->DisableDistributedNetAsync(isServer, virnicName, dstAddr);
     ASSERT_EQ(ret, NETMANAGER_ERR_OPERATION_FAILED);
 }
 

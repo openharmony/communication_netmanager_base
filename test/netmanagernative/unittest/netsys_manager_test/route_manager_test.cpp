@@ -777,8 +777,9 @@ HWTEST_F(RouteManagerTest, AddInterfaceToVirtualNetwork002, TestSize.Level1)
 HWTEST_F(RouteManagerTest, EnableDistributedClientNet001, TestSize.Level1)
 {
     std::string virNicAddr;
+    std::string virNicName;
     std::string iif;
-    auto ret = RouteManager::EnableDistributedClientNet(virNicAddr, iif);
+    auto ret = RouteManager::EnableDistributedClientNet(virNicAddr, virNicName, iif);
     EXPECT_EQ(ret, -1);
 }
 

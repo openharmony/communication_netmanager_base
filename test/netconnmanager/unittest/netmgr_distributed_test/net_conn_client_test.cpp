@@ -55,12 +55,14 @@ HWTEST_F(NetConnClientTest, EnableDistributedClientNet001, TestSize.Level1)
 {
     NetManagerBaseAccessToken token;
     std::string virnicAddr = "1.189.55.61";
+    std::string virnicName = "virnic";
     std::string iif = "lo";
-    int32_t ret = NetConnClient::GetInstance().EnableDistributedClientNet(virnicAddr, iif);
+    int32_t ret = NetConnClient::GetInstance().EnableDistributedClientNet(virnicAddr, virnicName, iif);
     EXPECT_EQ(ret, NETMANAGER_SUCCESS);
 
     bool isServer = false;
-    ret = NetConnClient::GetInstance().DisableDistributedNet(isServer);
+    std::string dstAddr = "1.1.1.1";
+    ret = NetConnClient::GetInstance().DisableDistributedNet(isServer, virnicName, dstAddr);
     EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
 }
 
@@ -75,7 +77,8 @@ HWTEST_F(NetConnClientTest, EnableDistributedServerNet001, TestSize.Level1)
     EXPECT_EQ(ret, NETMANAGER_SUCCESS);
 
     bool isServer = true;
-    ret = NetConnClient::GetInstance().DisableDistributedNet(isServer);
+    std::string virnicName = "virnic";
+    ret = NetConnClient::GetInstance().DisableDistributedNet(isServer, virnicName, dstAddr);
     EXPECT_EQ(ret, NETMANAGER_SUCCESS);
 }
 } // namespace NetManagerStandard
