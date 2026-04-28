@@ -570,12 +570,14 @@ HWTEST_F(NetsysNativeClientTest, EnableDistributedClientNet001, TestSize.Level1)
 {
     auto nativeClient = std::make_shared<NetsysNativeClient>();
     std::string virnicAddr = "1.189.55.61";
+    std::string virnicName = "virnic";
     std::string iif = "lo";
-    int32_t ret = nativeClient->EnableDistributedClientNet(virnicAddr, iif);
+    int32_t ret = nativeClient->EnableDistributedClientNet(virnicAddr, virnicName, iif);
     EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
 
     bool isServer = false;
-    ret = nativeClient->DisableDistributedNet(isServer);
+    std::string dstAddr = "1.1.1.1";
+    ret = nativeClient->DisableDistributedNet(isServer, virnicName, dstAddr);
     EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
 }
 
@@ -590,7 +592,8 @@ HWTEST_F(NetsysNativeClientTest, EnableDistributedServerNet001, TestSize.Level1)
     EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
 
     bool isServer = true;
-    ret = nativeClient->DisableDistributedNet(isServer);
+    std::string virnicName = "virnic";
+    ret = nativeClient->DisableDistributedNet(isServer, virnicName, dstAddr);
     EXPECT_EQ(ret, NetManagerStandard::NETMANAGER_SUCCESS);
 }
 

@@ -4098,17 +4098,21 @@ int32_t NetConnService::DisableVnicNetworkAsync()
     return NETMANAGER_SUCCESS;
 }
 
-int32_t NetConnService::EnableDistributedClientNet(const std::string &virnicAddr, const std::string &iif)
+int32_t NetConnService::EnableDistributedClientNet(const std::string &virnicAddr,
+    const std::string &virnicName, const std::string &iif)
 {
     int32_t result = NETMANAGER_ERROR;
     if (netConnEventHandler_) {
         netConnEventHandler_->PostSyncTask(
-            [this, &virnicAddr, &iif, &result]() { result = this->EnableDistributedClientNetAsync(virnicAddr, iif); });
+            [this, &virnicAddr, &virnicName, &iif, &result]() {
+                result = this->EnableDistributedClientNetAsync(virnicAddr, virnicName, iif);
+            });
     }
     return result;
 }
 
-int32_t NetConnService::EnableDistributedClientNetAsync(const std::string &virnicAddr, const std::string &iif)
+int32_t NetConnService::EnableDistributedClientNetAsync(const std::string &virnicAddr,
+    const std::string &virnicName, const std::string &iif)
 {
     if (iif.empty()) {
         NETMGR_LOG_E("iif is empty");
@@ -4120,7 +4124,8 @@ int32_t NetConnService::EnableDistributedClientNetAsync(const std::string &virni
         return NET_CONN_ERR_INVALID_NETWORK;
     }
 
-    if (NetsysController::GetInstance().EnableDistributedClientNet(virnicAddr, iif) != NETMANAGER_SUCCESS) {
+    if (NetsysController::GetInstance().EnableDistributedClientNet(
+        virnicAddr, virnicName, iif) != NETMANAGER_SUCCESS) {
         NETMGR_LOG_E("EnableDistributedClientNet failed");
         return NETMANAGER_ERR_OPERATION_FAILED;
     }
@@ -4161,19 +4166,22 @@ int32_t NetConnService::EnableDistributedServerNetAsync(const std::string &iif, 
     return NETMANAGER_SUCCESS;
 }
 
-int32_t NetConnService::DisableDistributedNet(bool isServer)
+int32_t NetConnService::DisableDistributedNet(bool isServer, const std::string &virnicName, const std::string &dstAddr)
 {
     int32_t result = NETMANAGER_ERROR;
     if (netConnEventHandler_) {
         netConnEventHandler_->PostSyncTask(
-            [this, isServer, &result]() { result = this->DisableDistributedNetAsync(isServer); });
+            [this, isServer, &virnicName, &dstAddr, &result]() {
+                result = this->DisableDistributedNetAsync(isServer, virnicName, dstAddr);
+            });
     }
     return result;
 }
 
-int32_t NetConnService::DisableDistributedNetAsync(bool isServer)
+int32_t NetConnService::DisableDistributedNetAsync(
+    bool isServer, const std::string &virnicName, const std::string &dstAddr)
 {
-    if (NetsysController::GetInstance().DisableDistributedNet(isServer) != NETMANAGER_SUCCESS) {
+    if (NetsysController::GetInstance().DisableDistributedNet(isServer, virnicName, dstAddr) != NETMANAGER_SUCCESS) {
         NETMGR_LOG_E("DisableDistributedNet");
         return NETMANAGER_ERR_OPERATION_FAILED;
     }

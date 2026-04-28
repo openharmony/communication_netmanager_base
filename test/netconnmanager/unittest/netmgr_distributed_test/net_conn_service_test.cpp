@@ -63,12 +63,14 @@ void NetConnServiceTest::TearDown() {}
 HWTEST_F(NetConnServiceTest, EnableDistributedClientNet001, TestSize.Level1)
 {
     std::string virnicAddr = "1.189.55.61";
+    std::string virnicName = "virnic";
     std::string iif = "lo";
-    int32_t ret = NetConnService::GetInstance()->EnableDistributedClientNet(virnicAddr, iif);
+    int32_t ret = NetConnService::GetInstance()->EnableDistributedClientNet(virnicAddr, virnicName, iif);
     EXPECT_NE(ret, NETMANAGER_SUCCESS);
 
     bool isServer = false;
-    ret = NetConnService::GetInstance()->DisableDistributedNet(isServer);
+    std::string dstAddr = "1.1.1.1";
+    ret = NetConnService::GetInstance()->DisableDistributedNet(isServer, virnicName, dstAddr);
     EXPECT_NE(ret, NETMANAGER_SUCCESS);
 }
 
@@ -82,7 +84,8 @@ HWTEST_F(NetConnServiceTest, EnableDistributedServerNet001, TestSize.Level1)
     EXPECT_NE(ret, NETMANAGER_SUCCESS);
 
     bool isServer = true;
-    ret = NetConnService::GetInstance()->DisableDistributedNet(isServer);
+    std::string virnicName = "virnic";
+    ret = NetConnService::GetInstance()->DisableDistributedNet(isServer, virnicName, dstAddr);
     EXPECT_NE(ret, NETMANAGER_SUCCESS);
 }
 

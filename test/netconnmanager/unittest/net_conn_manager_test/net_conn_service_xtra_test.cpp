@@ -1106,8 +1106,9 @@ HWTEST_F(NetConnServiceExtTest, EnableDistributedClientNetAsyncTest001, TestSize
 {
     auto netConnService = std::make_shared<NetConnService>();
     std::string virnicAddr;
+    std::string virnicName = "virnic";
     std::string iif;
-    auto ret = netConnService->EnableDistributedClientNetAsync(virnicAddr, iif);
+    auto ret = netConnService->EnableDistributedClientNetAsync(virnicAddr, virnicAddr, iif);
     EXPECT_EQ(ret, NET_CONN_ERR_INVALID_NETWORK);
 }
 
@@ -1115,8 +1116,9 @@ HWTEST_F(NetConnServiceExtTest, EnableDistributedClientNetAsyncTest002, TestSize
 {
     auto netConnService = std::make_shared<NetConnService>();
     std::string virnicAddr = "192.168.1.300";
+    std::string virnicName = "virnic";
     std::string iif = "eth0";
-    auto ret = netConnService->EnableDistributedClientNetAsync(virnicAddr, iif);
+    auto ret = netConnService->EnableDistributedClientNetAsync(virnicAddr, virnicAddr, iif);
     EXPECT_EQ(ret, NET_CONN_ERR_INVALID_NETWORK);
 }
 
@@ -1124,8 +1126,9 @@ HWTEST_F(NetConnServiceExtTest, EnableDistributedClientNetAsyncTest003, TestSize
 {
     auto netConnService = std::make_shared<NetConnService>();
     std::string virnicAddr = "192.168.1.5";
+    std::string virnicName = "virnic";
     std::string iif = "eth0";
-    auto ret = netConnService->EnableDistributedClientNetAsync(virnicAddr, iif);
+    auto ret = netConnService->EnableDistributedClientNetAsync(virnicAddr, virnicAddr, iif);
     EXPECT_EQ(ret, NETMANAGER_SUCCESS);
 }
 
@@ -1178,20 +1181,24 @@ HWTEST_F(NetConnServiceExtTest, EnableDistributedServerNetAsyncTest002, TestSize
 
 HWTEST_F(NetConnServiceExtTest, DisableDistributedNetTest001, TestSize.Level1)
 {
+    std::string virnicName = "virnic";
+    std::string dstAddr = "1.1.1.1";
     auto netConnService = std::make_shared<NetConnService>();
-    auto ret = netConnService->DisableDistributedNet(true);
+    auto ret = netConnService->DisableDistributedNet(true, virnicName, dstAddr);
     EXPECT_EQ(ret, NETMANAGER_ERROR);
 
     netConnService->netConnEventRunner_ = AppExecFwk::EventRunner::Create(NET_CONN_MANAGER_WORK_THREAD);
     netConnService->netConnEventHandler_ = std::make_shared<NetConnEventHandler>(netConnService->netConnEventRunner_);
-    ret = netConnService->DisableDistributedNet(true);
+    ret = netConnService->DisableDistributedNet(true, virnicName, dstAddr);
     EXPECT_NE(ret, NETMANAGER_ERROR);
 }
 
 HWTEST_F(NetConnServiceExtTest, DisableDistributedNetAsyncTest001, TestSize.Level1)
 {
+    std::string virnicName = "virnic";
+    std::string dstAddr = "1.1.1.1";
     auto netConnService = std::make_shared<NetConnService>();
-    auto ret = netConnService->DisableDistributedNetAsync(false);
+    auto ret = netConnService->DisableDistributedNetAsync(false, virnicName, dstAddr);
     EXPECT_TRUE(ret == NETMANAGER_ERR_OPERATION_FAILED || ret == NETMANAGER_SUCCESS);
 }
 

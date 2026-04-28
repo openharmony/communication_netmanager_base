@@ -123,9 +123,10 @@ int32_t NetManagerNative::DestroyVnic()
     return VnicManager::GetInstance().DestroyVnic();
 }
 
-int32_t NetManagerNative::EnableDistributedClientNet(const std::string &virnicAddr, const std::string &iif)
+int32_t NetManagerNative::EnableDistributedClientNet(const std::string &virnicAddr,
+    const std::string &virnicName, const std::string &iif)
 {
-    return routeManager_->EnableDistributedClientNet(virnicAddr, iif);
+    return routeManager_->EnableDistributedClientNet(virnicAddr, virnicName, iif);
 }
 
 int32_t NetManagerNative::EnableDistributedServerNet(const std::string &iif, const std::string &devIface,
@@ -134,9 +135,10 @@ int32_t NetManagerNative::EnableDistributedServerNet(const std::string &iif, con
     return routeManager_->EnableDistributedServerNet(iif, devIface, dstAddr, gw);
 }
 
-int32_t NetManagerNative::DisableDistributedNet(bool isServer)
+int32_t NetManagerNative::DisableDistributedNet(
+    bool isServer, const std::string &virnicName, const std::string &dstAddr)
 {
-    return routeManager_->DisableDistributedNet(isServer);
+    return routeManager_->DisableDistributedNet(isServer, virnicName, dstAddr);
 }
 
 int32_t NetManagerNative::NetworkAddUids(int32_t netId, const std::vector<UidRange> &uidRanges)

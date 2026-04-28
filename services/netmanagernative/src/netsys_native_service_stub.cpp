@@ -1148,9 +1148,10 @@ int32_t NetsysNativeServiceStub::CmdDestroyVnic(MessageParcel &data, MessageParc
 int32_t NetsysNativeServiceStub::CmdEnableDistributedClientNet(MessageParcel &data, MessageParcel &reply)
 {
     std::string virnicAddr = data.ReadString();
+    std::string virnicName = data.ReadString();
     std::string iif = data.ReadString();
 
-    int32_t result = EnableDistributedClientNet(virnicAddr, iif);
+    int32_t result = EnableDistributedClientNet(virnicAddr, virnicName, iif);
     reply.WriteInt32(result);
     NETNATIVE_LOG_D("CmdEnableDistributedClientNet has recved result %{public}d", result);
 
@@ -1174,8 +1175,10 @@ int32_t NetsysNativeServiceStub::CmdEnableDistributedServerNet(MessageParcel &da
 int32_t NetsysNativeServiceStub::CmdDisableDistributedNet(MessageParcel &data, MessageParcel &reply)
 {
     bool isServer = data.ReadBool();
+    std::string virnicName = data.ReadString();
+    std::string dstAddr = data.ReadString();
 
-    int32_t result = DisableDistributedNet(isServer);
+    int32_t result = DisableDistributedNet(isServer, virnicName, dstAddr);
     reply.WriteInt32(result);
     NETNATIVE_LOG_D("CmdDisableDistributedNet has recved result %{public}d", result);
 
