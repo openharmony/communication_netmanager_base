@@ -3625,7 +3625,7 @@ void NetConnService::OnReceiveEvent(const EventFwk::CommonEventData &data)
     } else if (action == EventFwk::CommonEventSupport::COMMON_EVENT_USER_SWITCHED) {
         NETMGR_LOG_I("on receive user_switched");
         HttpProxy curProxy;
-        GetGlobalHttpProxy(curProxy);
+        GetDefaultHttpProxy(INVALID_NET_ID, curProxy);
         SendHttpProxyChangeBroadcast(curProxy);
     }
 #ifdef FEATURE_SUPPORT_POWERMANAGER
