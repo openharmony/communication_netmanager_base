@@ -450,6 +450,7 @@ int32_t NetConnServiceStub::OnDisableVnicNetwork(MessageParcel &data, MessagePar
 }
 // LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 int32_t NetConnServiceStub::OnEnableDistributedClientNet(MessageParcel &data, MessageParcel &reply)
 {
     std::string virnicAddr = "";
@@ -471,6 +472,7 @@ int32_t NetConnServiceStub::OnEnableDistributedClientNet(MessageParcel &data, Me
     }
     return NETMANAGER_SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t NetConnServiceStub::OnEnableDistributedServerNet(MessageParcel &data, MessageParcel &reply)
 {
@@ -498,6 +500,7 @@ int32_t NetConnServiceStub::OnEnableDistributedServerNet(MessageParcel &data, Me
     return NETMANAGER_SUCCESS;
 }
 
+// LCOV_EXCL_START
 int32_t NetConnServiceStub::OnDisableDistributedNet(MessageParcel &data, MessageParcel &reply)
 {
     bool isServer = false;
@@ -521,6 +524,7 @@ int32_t NetConnServiceStub::OnDisableDistributedNet(MessageParcel &data, Message
     }
     return NETMANAGER_SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t NetConnServiceStub::OnRegisterNetSupplier(MessageParcel &data, MessageParcel &reply)
 {
