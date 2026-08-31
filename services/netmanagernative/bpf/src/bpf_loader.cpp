@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <charconv>
 #include <cerrno>
 #include <fcntl.h>
 #include <filesystem>
@@ -401,15 +402,14 @@ private:
                     return false;
                 }
             } else if (section->get_name() == "version") {
-                try {
-                    kernVersion_ = std::stoi(section->get_data());
-                } catch (const std::invalid_argument& e) {
-                    NETNATIVE_LOGE("invalid_argument");
-                    return false;
-                } catch (const std::out_of_range& e) {
-                    NETNATIVE_LOGE("out_of_range");
+                const std::string version = section->get_data();
+                int parsedVersion = 0;
+                auto parsed = std::from_chars(version.data(), version.data() + version.size(), parsedVersion);
+                if (parsed.ec != std::errc{} || parsed.ptr != version.data() + version.size()) {
+                    NETNATIVE_LOGE("invalid BPF kernel version");
                     return false;
                 }
+                kernVersion_ = parsedVersion;
                 if (kernVersion_ == 0) {
                     return false;
                 }
