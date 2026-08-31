@@ -16,6 +16,7 @@
 #include "net_mgr_log_wrapper.h"
 #include "http_proxy.h"
 
+#include <charconv>
 #include <cstdint>
 #include <cstdlib>
 #include <sstream>
@@ -194,12 +195,14 @@ struct Parser {
 
     static std::optional<uint16_t> ParsePort(const std::string &portStr)
     {
-        char *strEnd = nullptr;
-        auto port = std::strtol(portStr.c_str(), &strEnd, BASE_DEC);
-        if (strEnd == portStr.c_str() || port < 0 || port > std::numeric_limits<uint16_t>::max()) {
+        uint16_t port = 0;
+        const char *begin = portStr.data();
+        const char *end = begin + portStr.size();
+        auto parsed = std::from_chars(begin, end, port, BASE_DEC);
+        if (parsed.ec != std::errc{} || parsed.ptr != end) {
             return std::nullopt;
         }
-        return static_cast<uint16_t>(port);
+        return port;
     }
 
     static std::list<std::string> ParseProxyExclusionList(const std::string &exclusionList)
