@@ -16,6 +16,7 @@
 #include "traffic_manager.h"
 
 #include <algorithm>
+#include <charconv>
 #include <dirent.h>
 #include <fcntl.h>
 #include <net/if.h>
@@ -92,7 +93,17 @@ long GetInterfaceTrafficByType(const std::string &path, const std::string &type)
     }
     close(fd);
 
-    return atol(buf);
+    long traffic = 0;
+    const char *end = buf + nread;
+    auto parsed = std::from_chars(buf, end, traffic);
+    while (parsed.ptr != end && (*parsed.ptr == '\n' || *parsed.ptr == '\r')) {
+        ++parsed.ptr;
+    }
+    if (parsed.ec != std::errc{} || parsed.ptr != end) {
+        NETNATIVE_LOGE("invalid traffic counter");
+        return -1;
+    }
+    return traffic;
 }
 
 long TrafficManager::GetAllRxTraffic()
