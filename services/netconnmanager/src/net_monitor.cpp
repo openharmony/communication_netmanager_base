@@ -14,6 +14,7 @@
  */
 
 #include <arpa/inet.h>
+#include <charconv>
 #include <cstring>
 #include <fcntl.h>
 #include <fstream>
@@ -430,7 +431,14 @@ void NetMonitor::GetXReqIDFromConfig()
     xReqIdLen_ = -1;
     if (pos != std::string::npos) {
         pos += strlen(XREQ_LEN_HEADER);
-        xReqIdLen_ = std::atoi(content.substr(pos, content.find(NEW_LINE_STR, pos) - pos).c_str());
+        std::string lengthText = content.substr(pos, content.find(NEW_LINE_STR, pos) - pos);
+        int32_t parsedLength = 0;
+        const char *begin = lengthText.data();
+        const char *end = begin + lengthText.size();
+        auto parsed = std::from_chars(begin, end, parsedLength);
+        if (parsed.ec == std::errc{} && parsed.ptr == end) {
+            xReqIdLen_ = parsedLength;
+        }
     }
     NETMGR_LOG_D("GetXReqIDFromConfig %{public}d %{public}s", xReqIdLen_, xReqId_.c_str());
 }
