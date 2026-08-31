@@ -15,6 +15,7 @@
 
 #include "mock_netsys_native_client.h"
 
+#include <charconv>
 #include <ctime>
 #include <dirent.h>
 #include <memory>
@@ -252,12 +253,21 @@ static long GetInterfaceTrafficByType(const std::string &path, const std::string
         return -1;
     }
     char buf[100] = {0};
-    if (read(fd, buf, sizeof(buf)) == -1) {
+    ssize_t nread = read(fd, buf, sizeof(buf));
+    if (nread == -1) {
         close(fd);
         return -1;
     }
     close(fd);
-    long infBytes = atol(buf);
+    long infBytes = 0;
+    const char *end = buf + nread;
+    auto parsed = std::from_chars(buf, end, infBytes);
+    while (parsed.ptr != end && (*parsed.ptr == '\n' || *parsed.ptr == '\r')) {
+        ++parsed.ptr;
+    }
+    if (parsed.ec != std::errc{} || parsed.ptr != end) {
+        return -1;
+    }
     return infBytes;
 }
 
