@@ -477,15 +477,31 @@ int32_t SharingManager::GetNetworkSharingTraffic(const std::string &downIface, c
             NETNATIVE_LOG_D("GetNetworkSharingTraffic matche[%{public}s]", tempMatch.c_str());
             if (matches[i] == downIface && matches[i + NEXT_LIST_CORRECT_DATA] == upIface &&
                 (i >= TWO_LIST_CORRECT_DATA)) {
-                int64_t send =
-                    static_cast<int64_t>(strtoul(matches[i - TWO_LIST_CORRECT_DATA].str().c_str(), nullptr, 0));
+                uint64_t sendValue = 0;
+                const std::string sendText = matches[i - TWO_LIST_CORRECT_DATA].str();
+                const char *sendBegin = sendText.data();
+                const char *sendEnd = sendBegin + sendText.size();
+                auto sendParsed = std::from_chars(sendBegin, sendEnd, sendValue, 10);
+                if (sendParsed.ec != std::errc{} || sendParsed.ptr != sendEnd ||
+                    sendValue > static_cast<uint64_t>(INT64_MAX)) {
+                    continue;
+                }
+                int64_t send = static_cast<int64_t>(sendValue);
                 isFindTx = true;
                 traffic.send = send;
                 traffic.all += send;
             } else if (matches[i] == upIface && matches[i + NEXT_LIST_CORRECT_DATA] == downIface &&
                        (i >= NET_TRAFFIC_RESULT_INDEX_OFFSET)) {
-                int64_t receive =
-                    static_cast<int64_t>(strtoul(matches[i - TWO_LIST_CORRECT_DATA].str().c_str(), nullptr, 0));
+                uint64_t receiveValue = 0;
+                const std::string receiveText = matches[i - TWO_LIST_CORRECT_DATA].str();
+                const char *receiveBegin = receiveText.data();
+                const char *receiveEnd = receiveBegin + receiveText.size();
+                auto receiveParsed = std::from_chars(receiveBegin, receiveEnd, receiveValue, 10);
+                if (receiveParsed.ec != std::errc{} || receiveParsed.ptr != receiveEnd ||
+                    receiveValue > static_cast<uint64_t>(INT64_MAX)) {
+                    continue;
+                }
+                int64_t receive = static_cast<int64_t>(receiveValue);
                 isFindRx = true;
                 traffic.receive = receive;
                 traffic.all += receive;
