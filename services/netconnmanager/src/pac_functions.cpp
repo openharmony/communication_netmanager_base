@@ -27,6 +27,8 @@
 #include <unistd.h>
 
 #include "pac_functions.h"
+#include "netmanager_base_log.h"
+#include "parse_cidr_prefix.h"
 
 namespace OHOS {
 namespace NetManagerStandard {
@@ -982,7 +984,13 @@ jerry_value_t PacFunctions::JsIsInNetEx(const jerry_value_t funcObjVal, const je
         return jerry_create_boolean(false);
     }
     *slash = NULL_CHAR;
-    int prefixLen = atoi(slash + 1);
+    int32_t prefixLen = 0;
+    if (!ParseCidrPrefixLen(slash + 1, prefixLen)) {
+        NETMGR_LOG_E("invalid CIDR prefix length: %{public}s", slash + 1);
+        free(ip);
+        free(cidr);
+        return jerry_create_boolean(false);
+    }
     bool isIpv4 = (strchr(ip, COLON_CHAR) == nullptr && strchr(cidr, COLON_CHAR) == nullptr);
     bool result = isIpv4 ? CheckIpv4InNet(ip, cidr, prefixLen) : CheckIpv6InNet(ip, cidr, prefixLen);
     free(ip);
